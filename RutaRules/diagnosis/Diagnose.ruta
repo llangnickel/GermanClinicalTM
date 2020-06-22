@@ -1,0 +1,143 @@
+//Regeln zur Erkennung der Diagnosen: 
+
+DECLARE Sentence, W, CW, SW, COMMA, ANY, PERIOD, NUM, SPECIAL;
+DECLARE Lemma;
+DECLARE AD,SCD,MCI,LBD,PCA,FTD,PPA,LE,NPH,VD,OAS;
+//Alzheimers Disease, Subjective cognitive decline, mild cognitive impairement, lewy body dementia, posterior cortical atrophy, fronto temporal dementia,
+//Primär progressive Ahasie, limbische Enzephalitis, Dementielles Syndrom bei Normaldruckhydrozephalus, vaskuläre Demenz, organisches amnestisches Syndrom
+DECLARE timepoint, DiagnoseAll, atypisch, ICD10, MESH;
+DECLARE NormalizedNamedEntity, Concept;
+
+
+//ICD10
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"icd10") -> CREATE(ICD10, "key"="ICD10")};
+//D012148@MESH
+//NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"[A-Z0-9]{7}@MESH") -> MARK(MESH)};
+
+//TRIE Test
+//Document{->TRIE("AD.txt" = {AD, "key","AD"}, "SCD.txt" = {SCD, "key" ,"SCD"},"LBD.txt" = {LBD, "key" , "LBD"},
+//"FTD.txt" = {FTD, "key" , "FTD"},"PPA.txt" = {PPA, "key" , "PPA"},'config/DiagnoseDictionary.mtwl', true, 4, false, 0, "")};
+
+//AD
+
+Lemma{REGEXP(Lemma.wordLemma,"alzheimer")} SPECIAL?? Lemma{REGEXP(Lemma.wordLemma,"demenz|krankheit|erkrankung|demz")  -> MARK(AD,1,3)};
+Lemma{contains(Lemma.wordLemma,"alzheimer") -> MARK(AD,1)};
+
+WORDLIST ADList = 'config/AD.txt';
+Document {-> MARKFAST(AD, ADList, true, 2) };
+AD{->SETFEATURE("key","AD")};
+
+
+
+//SCD 
+
+W{REGEXP("subjektive|Subjektive|subjective|Subjective")} ANY?? W{REGEXP("kognitive|kognitiv|cognitive")} Lemma{contains(Lemma.wordLemma,"störung")  -> MARK(SCD, 1,4)};    
+W{REGEXP("subjektive|Subjektive|subjective|Subjective")} ANY?? W{REGEXP("kognitive|kognitiv|cognitive")} Lemma{contains(Lemma.wordLemma,"einschränkung")  -> MARK(SCD, 1,4)};
+W{REGEXP("subjektive|Subjektive|subjective|Subjective")} ANY?? W{REGEXP("kognitive|kognitiv|cognitive")} Lemma{contains(Lemma.wordLemma,"beeinträchtigung")  -> MARK(SCD, 1,4)};
+W{REGEXP("subjektive|Subjektive|subjective|Subjective")} Lemma{contains(Lemma.wordLemma,"beeinträchtigung")  -> MARK(SCD, 1,2)};
+W{REGEXP("subjektive|Subjektive|subjective|Subjective")} Lemma{contains(Lemma.wordLemma,"störung")  -> MARK(SCD, 1,2)};
+W{REGEXP("subjektive|Subjektive|subjective|Subjective")} ANY?? W{REGEXP("kognitive|kognitiv|cognitive")} Lemma{REGEXP(Lemma.wordLemma,"beschwerde|defizit|decline")  -> MARK(SCD, 1,4)};
+
+WORDLIST SCDList = 'config/SCD.txt';
+  Document {-> MARKFAST(SCD, SCDList, true, 3) };
+
+SCD{->SETFEATURE("key","SCD")};
+
+//MCI
+
+W.ct=="MCI" {-> CREATE (MCI)};
+Lemma{REGEXP(Lemma.wordLemma, "mild|leicht")} Lemma{REGEXP(Lemma.wordLemma, "kognitiv|cognitive")} Lemma{REGEXP(Lemma.wordLemma,"störung|beeinträchtigung|defizit|einschränkung|impairement|impariment")} SPECIAL? W.ct=="MCI"? SPECIAL? {  -> MARK(MCI, 1,6)}; 
+MCI{->SETFEATURE("key","MCI")};
+
+
+//LBD 
+
+WORDLIST LBDList = 'config/LBD.txt';
+  Document {-> MARKFAST(LBD, LBDList, true, 3) };
+LBD{->SETFEATURE("key","LBD")};
+
+//PCA 
+W{REGEXP("Posteriore|posteriore|posterioren")} W{REGEXP("kortikale|kortikalen")} Lemma{REGEXP(Lemma.wordLemma,"atrophie") -> MARK(PCA, 1,3)}; 
+
+W{REGEXP("Benson")} SPECIAL W{REGEXP("Syndroms") -> MARK(PCA, 1,3)}; 
+PCA{->SETFEATURE("key","PCA")};
+
+
+//FTD 
+WORDLIST FTDList = 'config/FTD.txt';
+  Document {-> MARKFAST(FTD, FTDList , true, 3) };
+FTD{->SETFEATURE("key","FTD")};
+
+  
+  
+//PPA
+WORDLIST PPAList = 'config/PPA.txt';
+  Document {-> MARKFAST(PPA, PPAList, true, 3) };
+PPA{->SETFEATURE("key","PPA")};
+
+
+ 
+//LE 
+W{REGEXP("limbische")}  W{REGEXP("Encephalitis|Enzephalitis") -> MARK(LE, 1,2)}; 
+LE{->SETFEATURE("key","LE")};
+
+//NPH 
+W.ct=="Dementielles" W.ct=="Syndrom" W.ct=="bei" W.ct=="Normaldruckhydrozephalus" { -> MARK(NPH, 1,4)};
+NPH{->SETFEATURE("key","NPH")};
+
+//VD
+W{REGEXP("vaskuläre|Vaskuläre")}  W{REGEXP("Demenz") -> MARK(VD, 1,2)};
+W.ct=="VD" {->MARK(VD)};
+VD{->SETFEATURE("key","VD")};
+
+//OAS
+W{REGEXP("Organisches|organisches")}  W{REGEXP("amnestisches|amnetisches")} W.ct=="Syndrom" {-> MARK(OAS, 1,2)}; 
+OAS{->SETFEATURE("key","OAS")};
+
+
+//timepoint
+W.ct=="mit" W{REGEXP("frühem|spätem")} W{REGEXP("Beginn|Erkrankungsbeginn") -> MARK(timepoint,1,3)};
+
+//atypisch 
+W.ct=="atypische" {-> MARK(atypisch)};
+W.ct=="atypisch" {-> MARK(atypisch)};
+
+
+Lemma{contains(Lemma.wordLemma,"demenz") -> MARK(MESH)};
+MESH{OR(PARTOF(OAS),PARTOF(VD),PARTOF(NPH),PARTOF(AD),PARTOF(SCD),PARTOF(MCI),PARTOF(LBD),PARTOF(PCA),PARTOF(FTD),PARTOF(PPA),PARTOF(LE)) -> UNMARKALL(MESH)};
+
+
+//Extend all annotations to "atypisch" and "timepoint" 
+
+AD{->SHIFT(AD,1,2)} timepoint;
+atypisch AD{->SHIFT(AD, 1,2)};
+
+SCD{->SHIFT(SCD,1,2)} timepoint;
+atypisch SCD{->SHIFT(SCD, 1,2)};
+
+MCI{->SHIFT(MCI,1,2)} timepoint;
+atypisch MCI{->SHIFT(MCI, 1,2)};
+
+LBD{->SHIFT(LBD,1,2)} timepoint;
+atypisch LBD{->SHIFT(LBD, 1,2)};
+
+PCA{->SHIFT(PCA,1,2)} timepoint;
+atypisch AD{->SHIFT(PCA, 1,2)};
+
+FTD{->SHIFT(FTD,1,2)} timepoint;
+atypisch FTD{->SHIFT(FTD, 1,2)};
+
+PPA{->SHIFT(PPA,1,2)} timepoint;
+atypisch PPA{->SHIFT(PPA, 1,2)};
+
+LE{->SHIFT(LE,1,2)} timepoint;
+atypisch LE{->SHIFT(LE, 1,2)};
+
+NPH{->SHIFT(NPH,1,2)} timepoint;
+atypisch NPH{->SHIFT(NPH, 1,2)};
+ 
+VD{->SHIFT(VD,1,2)} timepoint;
+atypisch VD{->SHIFT(VD, 1,2)};
+
+OAS{->SHIFT(OAS,1,2)} timepoint;
+atypisch OAS{->SHIFT(OAS, 1,2)};

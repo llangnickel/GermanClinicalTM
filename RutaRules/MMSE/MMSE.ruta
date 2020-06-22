@@ -1,0 +1,65 @@
+DECLARE W, SW, NUM, PERIOD, SPECIAL;
+DECLARE MMSE, MMST, DATE;
+DECLARE Monatsname, MiniMentalTest;
+DECLARE NormalizedNamedEntity, Concept;
+
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"short_date") -> MARK(DATE)};
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"full_date") -> MARK(DATE)};
+
+//MMSE: 29 von 30 Punkten
+//Mini-Mental-Status-Test vom Juli 2012: 18 von 30
+//Mini-Mental-Status-Test MMST vom 20.04.2017: 29/30
+//MMSE: -2
+//MMSE: 1,6
+//MMSE -1.7
+//4/2012: 16/30
+//Im MMST ergab sich ein Wert von 27 von 30 möglichen Punkten
+//Mini-Mental-Status-Test vom 4.5.2017: 26 von 30 Pkt..
+//MMST MiniMentalStatus-Test vom 30.10.2018:
+//Mini-Mental-Status v. 20.09.2004: 24 von 30 Punkten
+
+Document {-> MARKFAST(Monatsname, 'config/Monate.twl', true, 2) };
+
+W.ct=="MMST" {-> MARK(MiniMentalTest,1)};
+W.ct=="MMSE" {-> MARK(MiniMentalTest,1)};
+W.ct=="Mini" SPECIAL? W.ct=="Mental" SPECIAL? W.ct=="Status" SPECIAL? W.ct=="Test"? {-> MARK(MiniMentalTest,1,7)};
+W.ct=="Mini" SPECIAL? W.ct=="Mental" SPECIAL? W.ct=="Status" {->MARK(MiniMentalTest, 1,5)};
+W.ct=="Mini" SPECIAL? W.ct=="Mental" SPECIAL? W.ct=="State" {->MARK(MiniMentalTest, 1,5)};
+W.ct=="Mini" SPECIAL? W.ct=="Mental" SPECIAL? W.ct=="State" SPECIAL? W.ct=="Test" {->MARK(MiniMentalTest, 1,7)};
+
+NUM W.ct=="von" NUM.ct=="30" {-> MARK(MMSE,1,3)};
+NUM W.ct=="Pkt" PERIOD? W.ct=="von" NUM.ct=="30" {-> MARK(MMSE,1,5)}; 
+NUM W.ct=="Pkt" PERIOD? SPECIAL NUM.ct=="30" {-> MARK(MMSE,1,5)}; 
+NUM SPECIAL.ct=="/" NUM.ct=="30" {-> MARK(MMSE,1,3)};
+NUM W.ct=="von" NUM.ct=="20" {-> MARK(MMSE,1,3)};
+NUM W.ct=="Pkt" PERIOD? W.ct=="von" NUM.ct=="20" {-> MARK(MMSE,1,5)}; 
+NUM W.ct=="Pkt" PERIOD? SPECIAL NUM.ct=="20" {-> MARK(MMSE,1,5)}; 
+NUM SPECIAL.ct=="/" NUM.ct=="20" {-> MARK(MMSE,1,3)};
+
+//MiniMentalTest W? DATE {->MARK(DATE, 3,7)};
+MiniMentalTest ANY[1,2]? DATE {->MARK(MiniMentalTest , 3,7)};
+
+//MiniMentalTest W? Monatsname NUM {->MARK(DATE, 3,4)};
+//MiniMentalTest W? NUM PERIOD? Monatsname NUM {->MARK(DATE, 3,6)};
+//MiniMentalTest W? NUM SPECIAL.ct=="/" NUM {->MARK(DATE, 3,5)}
+//MiniMentalTest ANY[1,2] NUM PERIOD NUM PERIOD NUM {->MARK(DATE, 3,7)};
+//MiniMentalTest ANY[1,2] Monatsname NUM {->MARK(DATE, 3,4)};
+//MiniMentalTest ANY[1,2] PERIOD? Monatsname NUM {->MARK(DATE, 3,6)};
+//MiniMentalTest ANY[1,2] NUM SPECIAL.ct=="/" NUM {->MARK(DATE, 3,5)}
+
+//NUM SPECIAL.ct=="/" NUM SPECIAL.ct=="/" NUM {-> MARK(DATE,1,5)};
+//NUM SPECIAL.ct=="/" NUM {-> MARK(DATE,1,3)};
+
+DATE{-PARTOF(MiniMentalTest) -> UNMARK(DATE)};
+
+
+//Test
+//MiniMentalTest DATE? COLON NUM ANY{-REGEXP("(/|von)")} {-> MARK(MMSE,4,4)};
+
+DATE COLON MMSE {-> CREATE(MMST,1,3, "MMSE"=MMSE , "DATE"=DATE)};
+MMSE{PARTOF(MMST) -> UNMARK(MMSE)};
+DATE MMSE {-> CREATE(MMST,1,2, "MMSE"=MMSE , "DATE"=DATE)};
+MMSE{PARTOF(MMST) -> UNMARK(MMSE)};
+MMSE DATE {-> CREATE(MMST,1,2, "MMSE"=MMSE , "DATE"=DATE)};
+MMSE{PARTOF(MMST) -> UNMARK(MMSE)};
+MMSE {-> CREATE(MMST, "MMSE"=MMSE)};

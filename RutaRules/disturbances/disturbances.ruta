@@ -1,0 +1,322 @@
+DECLARE Sentence, W, CW, SW, COMMA, ANY, PERIOD, NUM;
+DECLARE Lemma;
+DECLARE Gedaechtnis, Konzentration, Wortfindung, PlanenOrdnen, Sonstige;
+DECLARE Fremd, Eigen, VerlaufPos, VerlaufNeg;
+DECLARE Value, Storung_Value, Trennung_Unit, Nebensatz_Unit;
+DECLARE Negation, Negation2;
+DECLARE NormalizedNamedEntity, Beginn, Beginn_A;
+DECLARE Test, DHilfsannotation;
+DECLARE mitBeg, ohneBeg;
+DECLARE Arztbriefdatum, MEDDATE;
+DECLARE ACMEMONSET_R, ACLNGONSET_R, ACATTONSET_R, ACOTHONSET_R, ACPLNONSET_R;
+DECLARE ACPLNONSET_A, ACMEMONSET_A, ACLNGONSET_A, ACATTONSET_A, ACOTHONSET_A;
+
+
+
+//Annotations are done creating entity with two features (DZNE variable as key and covered text as value)
+//Gedächtnisstörung 
+
+Lemma{contains(Lemma.wordLemma,"gedächtnis")-> CREATE(Gedaechtnis, "key"="ACXMEM","value"="True")}; 
+Lemma{contains(Lemma.wordLemma,"vergess")-> CREATE(Gedaechtnis, "value"="True", "key"="ACXMEM")}; 
+Lemma{contains(Lemma.wordLemma,"vergiss")-> CREATE(Gedaechtnis, "value"="True", "key"="ACXMEM")}; 
+Lemma{contains(Lemma.wordLemma,"vergeß")-> CREATE(Gedaechtnis, "value"="True", "key"="ACXMEM")}; 
+Lemma{contains(Lemma.wordLemma,"vergiß")-> CREATE(Gedaechtnis, "value"="True", "key"="ACXMEM")}; 
+Lemma{contains(Lemma.wordLemma,"verlege")-> CREATE(Gedaechtnis, "value"="True", "key"="ACXMEM")}; 
+Lemma{contains(Lemma.wordLemma,"häufig")} ANY?? Lemma{contains(Lemma.wordLemma,"fragen") ->CREATE(Gedaechtnis, 3, "value"="True", "key"="ACXMEM")};
+Lemma{contains(Lemma.wordLemma,"fragen")} Lemma{contains(Lemma.wordLemma,"häufig") ->CREATE(Gedaechtnis, "value"="True", "key"="ACXMEM")};
+Lemma{REGEXP(Lemma.wordLemma, "schlecht|nicht|problem|schwierigkeit")} W[0,6]? Lemma{REGEXP(Lemma.wordLemma,"erinnern|merken") ->CREATE(Gedaechtnis,1,3, "value"="True", "key"="ACXMEM")};
+Lemma{REGEXP(Lemma.wordLemma,"^mnestisch")} Lemma{REGEXP(Lemma.wordLemma,"defizit") ->CREATE(Gedaechtnis,1,2, "value"="True", "key"="ACXMEM")}; 
+//Lemma{REGEXP(Lemma.wordLemma,"erinnerung|nachfragen") ->CREATE(Gedaechtnis, "value"="True", "key"="ACXMEM")}; 
+Lemma{contains(Lemma.wordLemma,"merkfähigkeit") -> CREATE(Gedaechtnis, "value"="True", "key"="ACXMEM")};
+
+//remove false positives:
+
+Lemma{REGEXP(Lemma.wordLemma,"gedächtnisambulanz|gedächtnissprechstunde") -> UNMARK(Gedaechtnis)};
+Lemma{contains(Lemma.wordLemma,"langzeit") -> UNMARK(Gedaechtnis)};
+Lemma{contains(Lemma.wordLemma, "traum") -> MARK(DHilfsannotation)}; 
+Gedaechtnis{CONTAINS(DHilfsannotation) ->UNMARK(Gedaechtnis)}; 
+DHilfsannotation {-> UNMARKALL(DHilfsannotation)};
+
+//Konzentrationsstörung
+
+Lemma{contains(Lemma.wordLemma,"konzen")->CREATE(Konzentration, "value"="True", "key"="ACXATT")}; 
+Lemma{contains(Lemma.wordLemma,"aufmerksamkeit")->CREATE(Konzentration, "value"="True", "key"="ACXATT")};
+
+
+//Sonstiges 
+
+Lemma{contains(Lemma.wordLemma,"orientierung") ->CREATE(Sonstige, "value"="True", "key"="ACXOTH")};
+Lemma{contains(Lemma.wordLemma,"räumlich")} Sonstige {->SHIFT(Sonstige, 1,2)};
+Lemma{contains(Lemma.wordLemma,"örtlich")} Sonstige {->SHIFT(Sonstige, 1,2)};
+Lemma{contains(Lemma.wordLemma,"zeitlich")} Sonstige {->SHIFT(Sonstige, 1,2)};
+Lemma{contains(Lemma.wordLemma,"orientieren") ->CREATE(Sonstige, "value"="True", "key"="ACXOTH")}
+Lemma{contains(Lemma.wordLemma,"desorientiertheit") ->CREATE(Sonstige, "value"="True", "key"="ACXOTH")};
+
+
+//Planen und Ordnen 
+Lemma{contains(Lemma.wordLemma,"komplex")} Lemma{contains(Lemma.wordLemma,"ablauf")->CREATE(PlanenOrdnen,1,2, "value"="True", "key"="ACXPLN")};
+Lemma{contains(Lemma.wordLemma,"komplex")} Lemma{contains(Lemma.wordLemma,"aktivität")->CREATE(PlanenOrdnen,1,2, "value"="True", "key"="ACXPLN")};
+Lemma{contains(Lemma.wordLemma,"komplex")} Lemma{contains(Lemma.wordLemma,"tätigkeit")->CREATE(PlanenOrdnen,1,2, "value"="True", "key"="ACXPLN")};
+Lemma{contains(Lemma.wordLemma,"komplex")} Lemma{contains(Lemma.wordLemma,"aufgabe")-> CREATE(PlanenOrdnen,1,2, "value"="True", "key"="ACXPLN")};
+Lemma{contains(Lemma.wordLemma,"technisch")} Lemma{contains(Lemma.wordLemma,"gerät") ->CREATE(PlanenOrdnen,1,2, "value"="True", "key"="ACXPLN")};
+Lemma{REGEXP(Lemma.wordLemma, "finanzgeschäft|bankangelegenheit") -> CREATE(PlanenOrdnen, "value"="True", "key"="ACXPLN")};
+Lemma{contains(Lemma.wordLemma, "alltagskompetenz") -> CREATE(PlanenOrdnen, "value"="True", "key"="ACXPLN")};
+
+
+
+
+//Wortfindungsstörungen 
+Lemma{REGEXP(Lemma.wordLemma,"sprache")-> CREATE(Wortfindung, "value"="True", "key"="ACXLNG")};
+Lemma{contains(Lemma.wordLemma,"wortfindung")-> CREATE(Wortfindung, "value"="True", "key"="ACXLNG")};
+Lemma{contains(Lemma.wordLemma,"sprach")} Lemma{contains(Lemma.wordLemma,"ausdruck") ->CREATE(Wortfindung, "value"="True", "key"="ACXLNG")};
+Lemma{contains(Lemma.wordLemma,"sprach")} Lemma{contains(Lemma.wordLemma,"stark")} Lemma{contains(Lemma.wordLemma,"verarm")->CREATE(Wortfindung,1,3, "value"="True", "key"="ACXLNG")};
+Lemma{contains(Lemma.wordLemma,"buchstabe")} Lemma{contains(Lemma.wordLemma, "vertausche") -> CREATE(Wortfindung,1,2, "value"="True", "key"="ACXLNG")};
+Lemma{contains(Lemma.wordLemma,"vertausche")} Lemma{contains(Lemma.wordLemma, "buchstabe") -> CREATE(Wortfindung,1,2, "value"="True", "key"="ACXLNG")};
+Lemma{contains(Lemma.wordLemma,"sprachverständnis")-> CREATE(Wortfindung, "value"="True", "key"="ACXLNG")};
+
+
+//Onset:
+
+SPECIAL.ct=="½" {->MARK(NUM)};
+SPECIAL.ct=="¾" {->MARK(NUM)};
+SPECIAL.ct=="¼" {->MARK(NUM)};
+
+// Relativ-Jahr:
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM Lemma{contains(Lemma.wordLemma,"bis")} NUM Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 4, 7)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM SPECIAL NUM Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 4, 7)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM SPECIAL NUM Lemma{contains(Lemma.wordLemma,"bis")} NUM Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 7, 9)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM NUM SPECIAL NUM Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 4, 8)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} Lemma{REGEXP(Lemma.wordLemma, "ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} Lemma{REGEXP(Lemma.wordLemma,"jahr") -> MARK(Beginn, 2, 3)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? Lemma{REGEXP(Lemma.wordLemma,"ein|eineinhalb|dreiviertel|mehrere|einige")}  Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? SW? Lemma{REGEXP(Lemma.wordLemma,"ein|eineinhalb|dreiviertel|mehrere|einige")}  Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? SW? Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht")}  Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} SW Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} Lemma{REGEXP(Lemma.wordLemma,"jahr") -> MARK (Beginn, 1,4)};
+Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} Lemma{REGEXP(Lemma.wordLemma,"jahr") -> MARK (Beginn, 1,2)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} Lemma{REGEXP(Lemma.wordLemma,"jahr") -> MARK (Beginn, 4,5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? Lemma{REGEXP(Lemma.wordLemma,"ein|eineinhalb|dreiviertel|mehrere|halb|einige")} Lemma{REGEXP(Lemma.wordLemma,"jahr") -> MARK (Beginn, 4,5)};
+Lemma{REGEXP(Lemma.wordLemma,"im")} Lemma{REGEXP(Lemma.wordLemma,"letzte")} Lemma{REGEXP(Lemma.wordLemma,"jahr") -> MARK (Beginn, 2,3)};
+//Relativ-Monat:
+
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM Lemma{contains(Lemma.wordLemma,"monat") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM Lemma{contains(Lemma.wordLemma,"bis")} NUM Lemma{contains(Lemma.wordLemma,"monat") -> MARK(Beginn, 4, 7)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM SPECIAL NUM Lemma{contains(Lemma.wordLemma,"monat") -> MARK(Beginn, 4, 7)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM SPECIAL NUM Lemma{contains(Lemma.wordLemma,"bis")} NUM Lemma{contains(Lemma.wordLemma,"monat") -> MARK(Beginn, 7, 9)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM NUM SPECIAL NUM Lemma{contains(Lemma.wordLemma,"monat") -> MARK(Beginn, 4, 8)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} Lemma{REGEXP(Lemma.wordLemma, "ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölfdreizehn|vierzehn|fünfzehn|zwanzig")} Lemma{REGEXP(Lemma.wordLemma,"monat") -> MARK(Beginn, 2, 3)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? Lemma{REGEXP(Lemma.wordLemma,"ein|eineinhalb|dreiviertel|mehrere|einige")}  Lemma{contains(Lemma.wordLemma,"monat") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? SW? Lemma{REGEXP(Lemma.wordLemma,"ein|eineinhalb|dreiviertel|mehrere|einige")}  Lemma{contains(Lemma.wordLemma,"monat") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? SW? Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")}  Lemma{contains(Lemma.wordLemma,"monat") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} SW Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} Lemma{REGEXP(Lemma.wordLemma,"monat") -> MARK (Beginn, 1,4)};
+Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} Lemma{REGEXP(Lemma.wordLemma,"monat") -> MARK (Beginn, 1,2)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} Lemma{REGEXP(Lemma.wordLemma,"monat") -> MARK (Beginn, 4,5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? Lemma{REGEXP(Lemma.wordLemma,"ein|eineinhalb|dreiviertel|mehrere|halb|einige")} Lemma{REGEXP(Lemma.wordLemma,"monat") -> MARK (Beginn, 4,5)};
+Lemma{REGEXP(Lemma.wordLemma,"im")} Lemma{REGEXP(Lemma.wordLemma,"letzte")} Lemma{REGEXP(Lemma.wordLemma,"monat") -> MARK (Beginn, 2,3)};
+
+//Relativ-Woche:
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM Lemma{contains(Lemma.wordLemma,"woche") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM Lemma{contains(Lemma.wordLemma,"bis")} NUM Lemma{contains(Lemma.wordLemma,"woche") -> MARK(Beginn, 4, 7)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM SPECIAL NUM Lemma{contains(Lemma.wordLemma,"woche") -> MARK(Beginn, 4, 7)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM SPECIAL NUM Lemma{contains(Lemma.wordLemma,"bis")} NUM Lemma{contains(Lemma.wordLemma,"woche") -> MARK(Beginn, 7, 9)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM NUM SPECIAL NUM Lemma{contains(Lemma.wordLemma,"woche") -> MARK(Beginn, 4, 8)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} Lemma{REGEXP(Lemma.wordLemma, "ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} Lemma{REGEXP(Lemma.wordLemma,"woche") -> MARK(Beginn, 2, 3)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? Lemma{REGEXP(Lemma.wordLemma,"ein|eineinhalb|dreiviertel|mehrere|einige")}  Lemma{contains(Lemma.wordLemma,"woche") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? SW? Lemma{REGEXP(Lemma.wordLemma,"ein|eineinhalb|dreiviertel|mehrere|einige")}  Lemma{contains(Lemma.wordLemma,"woche") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? SW? Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht")}  Lemma{contains(Lemma.wordLemma,"woche") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} SW Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} Lemma{REGEXP(Lemma.wordLemma,"woche") -> MARK (Beginn, 1,4)};
+Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} Lemma{REGEXP(Lemma.wordLemma,"woche") -> MARK (Beginn, 1,2)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|zwanzig")} Lemma{REGEXP(Lemma.wordLemma,"woche") -> MARK (Beginn, 4,5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? Lemma{REGEXP(Lemma.wordLemma,"ein|eineinhalb|dreiviertel|mehrere|halb|einige")} Lemma{REGEXP(Lemma.wordLemma,"woche") -> MARK (Beginn, 4,5)};
+Lemma{REGEXP(Lemma.wordLemma,"im")} Lemma{REGEXP(Lemma.wordLemma,"letzte")} Lemma{REGEXP(Lemma.wordLemma,"woche") -> MARK (Beginn, 2,3)};
+
+
+Sentence{AND(CONTAINS(Gedaechtnis), CONTAINS(Beginn))} -> {Beginn{-> CREATE(ACMEMONSET_R, "key"="ACMEMONSET_R", "value"=Beginn.ct)};};
+Sentence{AND(CONTAINS(Wortfindung), CONTAINS(Beginn))} -> {Beginn{-> CREATE(ACLNGONSET_R,"key"="ACLNGONSET_R", "value"=Beginn.ct)};};
+Sentence{AND(CONTAINS(Konzentration), CONTAINS(Beginn))} -> {Beginn{-> CREATE(ACATTONSET_R, "key"="ACATTONSET_R","value"=Beginn.ct)};};
+Sentence{AND(CONTAINS(Sonstige), CONTAINS(Beginn))} -> {Beginn{-> CREATE(ACOTHONSET_R,"key"="ACOTHONSET_R", "value"=Beginn.ct)};};
+Sentence{AND(CONTAINS(PlanenOrdnen), CONTAINS(Beginn))} -> {Beginn{-> CREATE(ACPLNONSET_R, "key"="ACPLNONSET_R","value"=Beginn.ct)};};
+
+// Absolut:
+
+NUM{REGEXP("20..") -> MARK(Beginn_A)};
+NUM PERIOD NUM PERIOD NUM{REGEXP("20..|19..") -> MARK(Beginn_A, 1,5)};
+Beginn_A{CONTAINS(Arztbriefdatum) -> UNMARK(Beginn_A)};
+Beginn_A{CONTAINS(Beginn) -> UNMARK(Beginn_A)};
+
+
+Sentence{AND(CONTAINS(Gedaechtnis), CONTAINS(Beginn_A))} -> {Beginn_A{-> CREATE(ACMEMONSET_A,"key"="ACMEMONSET_A", "value"=Beginn_A.ct)};};
+Sentence{AND(CONTAINS(Wortfindung), CONTAINS(Beginn_A))} -> {Beginn_A{-> CREATE(ACLNGONSET_A, "key"="ACLNGONSET_A","value"=Beginn_A.ct)};};
+Sentence{AND(CONTAINS(Konzentration), CONTAINS(Beginn_A))} -> {Beginn_A{-> CREATE(ACATTONSET_A, "key"="ACATTONSET_A","value"=Beginn_A.ct)};};
+Sentence{AND(CONTAINS(Sonstige), CONTAINS(Beginn_A))} -> {Beginn_A{-> CREATE(ACOTHONSET_A,"key"="ACOTHONSET_A", "value"=Beginn_A.ct)};};
+Sentence{AND(CONTAINS(PlanenOrdnen), CONTAINS(Beginn_A))} -> {Beginn_A{-> CREATE(ACPLNONSET_A,"key"="ACPLNONSET_A", "value"=Beginn_A.ct)};};
+
+
+
+//Fremd und Eigen 
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"family_member") -> MARK(Fremd)};
+Lemma{REGEXP(Lemma.wordLemma,"ehemann|ehefrau|sohn|tochter|schwiegersohn|schwiegertochter|angehörige|
+    |familie|informant|fremdanamnestisch|kollege|enkelsohn|familienangehöriger|freundin") -> MARK(Fremd)};
+
+Lemma{REGEXP(Lemma.wordLemma,"eigenanamnestisch|subjektiv|selbsteinschätzung") -> MARK(Eigen)};
+Lemma{REGEXP(Lemma.wordLemma,"herr|frau")} Lemma{contains(Lemma.wordLemma,"xxx")} SW.ct=="selber"? Lemma{contains(Lemma.wordLemma,"berichten") -> MARK(Eigen, 1, 4)};
+Lemma{REGEXP(Lemma.wordLemma,"er|sie")} SW.ct=="selber" { -> MARK(Eigen, 1, 2)};
+Lemma{REGEXP(Lemma.wordLemma,"patient|patientin")} Lemma{REGEXP(Lemma.wordLemma,"berichten|äußern|schildern") -> MARK(Eigen, 1)};
+Lemma{REGEXP(Lemma.wordLemma,"patient|patientin")} Lemma{REGEXP(Lemma.wordLemma,"geben")} W.ct=="an" {-> MARK(Eigen, 1)};
+Lemma{REGEXP(Lemma.wordLemma,"fallen|äußern")} Lemma{REGEXP(Lemma.wordLemma,"herr|frau")} Lemma{contains(Lemma.wordLemma,"xxx") -> MARK(Eigen, 2, 3)};
+Lemma{REGEXP(Lemma.wordLemma,"patient|patientin")} Lemma{REGEXP(Lemma.wordLemma,"selbst|selber") -> MARK(Eigen, 1)};
+SW.ct=="von" SW? Lemma{REGEXP(Lemma.wordLemma,"patient|patientin") -> MARK(Eigen, 1,3)};
+
+//if sentence contains both fremd and eigen, unmark eigen 
+Sentence{AND(CONTAINS(Eigen), CONTAINS(Fremd))} -> {Eigen {-> UNMARK(Eigen)};};
+//exception to this rule: 
+Lemma{REGEXP(Lemma.wordLemma,"herr|frau")} Lemma{contains(Lemma.wordLemma,"xxx")} W[1,4]? Fremd Lemma{contains(Lemma.wordLemma,"berichten") -> MARK(Eigen, 1, 2)};
+
+
+//wenn im ersten Satz steht, dass der Patient ohne Begleitung kommt, oder nicht, dass er in Begleitung kommt, ändere alle keys zu Eigen:
+W.ct=="ohne" W.ct=="Begleitung" {->MARK(ohneBeg, 1,2)};
+W.ct=="in" W.ct=="Begleitung" ANY?? Fremd {->MARK(mitBeg,1,4)};
+W.ct=="im" W.ct=="Beisein" ANY?? Fremd {->MARK(mitBeg,1,4)};
+
+Document{CONTAINS(ohneBeg)} -> {Gedaechtnis{->SETFEATURE("key", "AC12MEM")};};
+Document{CONTAINS(ohneBeg)} -> {Konzentration{->SETFEATURE("key", "AC12ATT")};};
+Document{CONTAINS(ohneBeg)} -> {Sonstige{->SETFEATURE("key", "AC12OTH")};};
+Document{CONTAINS(ohneBeg)} -> {PlanenOrdnen{->SETFEATURE("key", "AC12PLN")};};
+Document{CONTAINS(ohneBeg)} -> {Wortfindung{->SETFEATURE("key", "AC12LNG")};};
+
+Document{-CONTAINS(mitBeg)} -> {Gedaechtnis{->SETFEATURE("key", "AC12MEM")};};
+Document{-CONTAINS(mitBeg)} -> {Konzentration{->SETFEATURE("key", "AC12ATT")};};
+Document{-CONTAINS(mitBeg)} -> {Sonstige{->SETFEATURE("key", "AC12OTH")};};
+Document{-CONTAINS(mitBeg)} -> {PlanenOrdnen{->SETFEATURE("key", "AC12PLN")};};
+Document{-CONTAINS(mitBeg)} -> {Wortfindung{->SETFEATURE("key", "AC12LNG")};};
+
+
+//Änderung des Keys, wenn Eigen oder Fremd in einem Satz, der eine Störung beinhaltet, auftauchen: 
+
+Sentence{AND(CONTAINS(Gedaechtnis), CONTAINS(Fremd))} -> {Gedaechtnis{-> SETFEATURE("key", "AC2MEM")};};
+Sentence{AND(CONTAINS(Konzentration), CONTAINS(Fremd))} -> {Konzentration{-> SETFEATURE("key", "AC2ATT")};};
+Sentence{AND(CONTAINS(Sonstige), CONTAINS(Fremd))} -> {Sonstige{-> SETFEATURE("key", "AC2OTH")};};
+Sentence{AND(CONTAINS(PlanenOrdnen), CONTAINS(Fremd))} -> {PlanenOrdnen{-> SETFEATURE("key", "AC2PLN")};};
+Sentence{AND(CONTAINS(Wortfindung), CONTAINS(Fremd))} -> {Wortfindung{-> SETFEATURE("key", "AC2LNG")};};
+
+Sentence{AND(CONTAINS(Gedaechtnis), CONTAINS(Eigen))} -> {Gedaechtnis{-> SETFEATURE("key", "AC12MEM")};};
+Sentence{AND(CONTAINS(Konzentration), CONTAINS(Eigen))} -> {Konzentration{-> SETFEATURE("key", "AC12ATT")};};
+Sentence{AND(CONTAINS(Sonstige), CONTAINS(Eigen))} -> {Sonstige{-> SETFEATURE("key", "AC12OTH")};};
+Sentence{AND(CONTAINS(PlanenOrdnen), CONTAINS(Eigen))} -> {PlanenOrdnen{-> SETFEATURE("key", "AC12PLN")};};
+Sentence{AND(CONTAINS(Wortfindung), CONTAINS(Eigen))} -> {Wortfindung{-> SETFEATURE("key", "AC12LNG")};};
+
+
+//Beginn -> im Moment noch nicht relevant
+
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"year_date") -> MARK(Beginn)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM  Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? Lemma{REGEXP(Lemma.wordLemma,"ein|eineinhalb|dreiviertel|mehrere")}  Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? SW? Lemma{REGEXP(Lemma.wordLemma,"ein|eineinhalb|dreiviertel|mehrere")}  Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 4, 5)};
+Lemma{REGEXP(Lemma.wordLemma,"seit")} SW? NUM  Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 3, 4)};
+Lemma{REGEXP(Lemma.wordLemma,"seit")} NUM  {-> MARK(Beginn, 2)};
+Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben")} SW Lemma{REGEXP(Lemma.wordLemma,"zwei|drei|vier|fünf|sechs|sieben|acht")} Lemma{REGEXP(Lemma.wordLemma,"jahr|woche") -> MARK (Beginn, 1,4)};
+Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben")} Lemma{REGEXP(Lemma.wordLemma,"jahr|woche|monat") -> MARK (Beginn, 1,2)};
+
+
+
+
+//Assertion Detection: 
+    
+//for simplification, unify all "störungen" to one term = Stoerung_Value
+Wortfindung {->MARK(Stoerung_Value)};
+Gedaechtnis { -> MARK (Stoerung_Value)};
+PlanenOrdnen { -> MARK (Stoerung_Value)};
+Sonstige { -> MARK (Stoerung_Value)};
+Konzentration { -> MARK (Stoerung_Value)};
+
+//experiencer detection: 
+//für die ehefrau, für den ehemann,  von ihrem ehemann, von seiner ehefrau 
+W.ct=="für" Lemma{contains(Lemma.wordLemma,"der")} Fremd {->UNMARK(Fremd, 3)};
+W.ct=="von" Lemma{REGEXP(Lemma.wordLemma,"ihr|sein|der")} Fremd {->UNMARK(Fremd, 3)};
+
+
+//RelationDetection
+//Change variable depending on the experiencer, working on sentence basis
+
+
+//Negation Detection 
+//create two kinds of negation lists: 
+    
+//negation list containing words that are only negated in presence of a negation term like not, no, without.. 
+
+Lemma{REGEXP(Lemma.wordLemma, "nicht|nie|kein|ohne")} ANY?? Lemma{REGEXP(Lemma.wordLemma, "berichten|vergessen|auffällig|bestehen|bestünden|beeinträchtigen|beeinträchtigung|
+    |stören|möglich|nachweisbar|vorkommen|mindern|angeben|feststellen|kommen|festellbar|problematisch|befund|einschränken|ausprägen|hinweis|beweis|vorhanden|
+    |entwickeln|verdacht|zutreffend|auffälligkeit|problem|auftreten|schildern|defizit") -> MARK(Negation, 1, 3)};
+
+Lemma{REGEXP(Lemma.wordLemma, "berichten|auffällig|bestehen|bestünden|beeinträchtigen|stören|möglich|nachweisbar|vorkommen|mindern|feststellen|festellbar|
+    |problematisch|befund|einschränken|ausprägen|hinweis|beweis|vorhanden|entwickeln|verdacht|zutreffend|auffälligkeit|auftreten|schildern")} 
+Lemma{REGEXP(Lemma.wordLemma,"nicht|nie|kein") -> MARK(Negation, 1, 2)};
+
+
+Lemma{REGEXP(Lemma.wordLemma, "sein")} W.ct=="generell"? Lemma{REGEXP(Lemma.wordLemma, "gut") -> MARK(Negation, 1,3)};    
+Lemma{REGEXP(Lemma.wordLemma, "gut")} Lemma{REGEXP(Lemma.wordLemma, "sein") -> MARK(Negation, 1,2)}; 
+Lemma{REGEXP(Lemma.wordLemma, "haben")} Lemma{REGEXP(Lemma.wordLemma, "er|sie")} W.ct=="nicht"{ -> MARK(Negation, 1,3)};
+Lemma{REGEXP(Lemma.wordLemma, "nie|nicht")} Negation {->UNMARK(Negation, 2)};   
+
+//negation list containing negated words 
+Lemma{REGEXP(Lemma.wordLemma,"unproblematisch|unauffällig|intakt|negieren|ungestört|altersentsprechend|verneinen|ausschließen|unbeeinträchtigt") -> MARK(Negation)};
+
+
+
+
+//if a disease follows "kein" it is removed immediately
+// if a disease follows "ohne einschränkung" at the end of a sentence it is removed immediately 
+
+Lemma{contains(Lemma.wordLemma,"kein")} W?? Stoerung_Value { -> UNMARK(Stoerung_Value, 3)};
+Lemma{contains(Lemma.wordLemma,"ohne")} W.ct=="wesentliche"? Lemma{REGEXP(Lemma.wordLemma,"einschränkung")} W?? Stoerung_Value PERIOD { -> UNMARK(Stoerung_Value, 5)};
+
+
+Stoerung_Value{PARTOF(Negation)-> UNMARK(Stoerung_Value)};
+
+
+//Wordlists with conjunctions: 
+    //conjunction = Trennung_Unit
+Lemma{REGEXP(Lemma.wordLemma, "jedoch|aber|trotzdem|dennoch|lediglich|außer|sondern") -> MARK(Trennung_Unit)};
+
+//if sentence does not contain a trennwort but a negation, unmark disease 
+Sentence {AND(-CONTAINS(Trennung_Unit),CONTAINS(Negation))} -> {Stoerung_Value
+       {-> UNMARK(Stoerung_Value)}; };       
+     
+//Declare Nebensatz = Nebensatz_Unit;        
+Document {CONTAINS(Trennung_Unit)}-> {COMMA ANY[0,5]? Trennung_Unit ANY*? PERIOD {-> MARK(Nebensatz_Unit, 2, 4)}; };
+Document {CONTAINS(Trennung_Unit)}-> {Trennung_Unit COMMA ANY*? PERIOD {-> MARK(Nebensatz_Unit, 3, 4)}; };
+
+
+// unmark all occurencies of alzheimer in a sub-clause that is denied 
+Nebensatz_Unit {AND(CONTAINS(Negation), CONTAINS(Stoerung_Value))} -> {Stoerung_Value
+       {-> UNMARK(Stoerung_Value)}; };
+
+       
+//if sentence contains disease negation comma and then a stop word, unmark this disease  (HAUPTSATZ) 
+//Sentence {CONTAINS (Stoerung_Value)}-> {Stoerung_Value ANY*? Negation COMMA Trennung_Unit {-> UNMARK(Stoerung_Value, 1)}; };       
+Sentence {CONTAINS (Stoerung_Value)}-> {Stoerung_Value ANY*? Negation ANY*? Nebensatz_Unit {-> UNMARK(Stoerung_Value, 1)}; };
+
+
+
+//catching exceptions: 
+//if a negation term directly follows a disease, remove it: 
+
+Stoerung_Value Negation -> {Stoerung_Value{-> UNMARK(Stoerung_Value)}; };  
+
+
+//Remove annotations not needed anymore/cleaning: 
+    
+Sentence{-CONTAINS(Stoerung_Value)} -> {Verlauf {-> UNMARK (Verlauf)};};
+Sentence{-CONTAINS(Stoerung_Value)} -> {Fremd {-> UNMARK (Fremd)};};
+Sentence{-CONTAINS(Stoerung_Value)} -> {Eigen {-> UNMARK (Eigen)};};
+Sentence{-CONTAINS(Stoerung_Value)} -> {Beginn {-> UNMARK (Beginn)};};
+
+Wortfindung {-CONTAINS(Stoerung_Value) -> SETFEATURE("value","False")};
+Gedaechtnis {-CONTAINS(Stoerung_Value)-> SETFEATURE("value","False")};
+PlanenOrdnen {-CONTAINS(Stoerung_Value) -> SETFEATURE("value","False")};
+Konzentration {-CONTAINS(Stoerung_Value)-> SETFEATURE("value","False")};
+Sonstige {-CONTAINS(Stoerung_Value)-> SETFEATURE("value","False")};
+
+Stoerung_Value {-> UNMARKALL(Stoerung_Value)};
+Negation {-> UNMARKALL(Negation)};
+Nebensatz_Unit {-> UNMARKALL(Nebensatz_Unit)};
+Trennung_Unit {-> UNMARKALL(Trennung_Unit)};

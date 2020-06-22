@@ -1,0 +1,260 @@
+DECLARE Lemma, Hilfsannotation, Sentence, Unit, Unit1, Unit2; 
+DECLARE Anamnese, Diagnose, Medikation, Untersuchungsbefund, MiniMental, Epikrise, Freitext, Others;
+DECLARE NormalizedNamedEntity, Concept;
+DECLARE MEDDATE, Arztbriefdatum;
+
+
+
+//Meddate:
+//NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"short_date") -> MARK(Unit)};
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"full_date") -> MARK(Hilfsannotation)};
+// der sich zwischen dem 05.02.2014 und 30.04.2014 
+NUM PERIOD NUM PERIOD {->MARK(Unit,1,4)};
+NUM PERIOD NUM PERIOD NUM {->MARK(Hilfsannotation,1,5)};
+Hilfsannotation{CONTAINS(Unit) -> UNMARKALL(Unit)};
+//Unit {-> MARK(Hilfsannotation), UNMARKALL(Unit)};
+W{REGEXP("berichte|berichten")} W.ct=="Ihnen"? ANY[0,5]? W.ct=="über" ANY[0,35]? W.ct=="sich" W.ct=="am" Hilfsannotation  {-> MARK(MEDDATE, 8,8)};
+W{REGEXP("berichte|berichten")} W.ct=="ihnen"? ANY[0,5]? W.ct=="über" ANY[0,35]? W.ct=="sich" W.ct=="am" Hilfsannotation  {-> MARK(MEDDATE, 8,8)};
+W{REGEXP("berichte|berichten")} W.ct=="Ihnen"? ANY[0,5]? W.ct=="über" ANY[0,35]? W.ct=="sich" W? W.ct=="am" Hilfsannotation  {-> MARK(MEDDATE, 9,9)};
+W{REGEXP("berichte|berichten")} W.ct=="ihnen"? ANY[0,5]? W.ct=="über" ANY[0,35]? W.ct=="sich" W? W.ct=="am" Hilfsannotation  {-> MARK(MEDDATE, 9,9)};
+W.ct=="erscheint" W{REGEXP("erstmalig|erstmals|zuletzt|einmalig|")} W.ct=="am" Hilfsannotation {-> MARK(MEDDATE, 4,4)};
+W{REGEXP("berichte|berichten")} W? W.ct=="über" ANY[0,10]? W.ct=="Vorstellung" W.ct=="am" Hilfsannotation {-> MARK(MEDDATE, 7,7)};
+W{REGEXP("stellte|stellt")} W.ct=="sich" W? W.ct=="am" Hilfsannotation {-> MARK(MEDDATE,5,5)};
+W.ct=="wurde" W{REGEXP("erstmalig|erstmals|zuletzt|einmalig|")} W.ct=="am" Hilfsannotation {-> MARK(MEDDATE,4,4)};
+W{REGEXP("berichte|berichten")} W.ct=="Ihnen"? ANY[0,5]? W.ct=="über" ANY[0,35]? W.ct=="sich" W.ct=="vom"? W.ct=="von"? Hilfsannotation W.ct=="bis" {-> MARK(MEDDATE, 9,9)};
+W{REGEXP("berichte|berichten")} W.ct=="ihnen"? ANY[0,5]? W.ct=="über" ANY[0,35]? W.ct=="sich" W.ct=="vom"? W.ct=="von"? Hilfsannotation W.ct=="bis" {-> MARK(MEDDATE, 9,9)};
+W{REGEXP("berichte|berichten")} W.ct=="Ihnen"? ANY[0,5]? W.ct=="über" ANY[0,35]? W.ct=="sich" W.ct=="zuletzt" W.ct=="am" Hilfsannotation {-> MARK(MEDDATE, 9,9)};
+W{REGEXP("berichte|berichten")} W.ct=="ihnen"? ANY[0,5]? W.ct=="über" ANY[0,35]? W.ct=="sich" W.ct=="zuletzt" W.ct=="am" Hilfsannotation {-> MARK(MEDDATE, 9,9)};
+W{REGEXP("berichte|berichten")} W.ct=="ihnen"? ANY[0,5]? W.ct=="über" ANY[0,35]? W.ct=="sich" W.ct=="zwischen" W.ct=="dem" Hilfsannotation {-> MARK(MEDDATE, 9,9)};
+W{REGEXP("berichte|berichten")} W.ct=="Ihnen"? ANY[0,5]? W.ct=="über" ANY[0,35]? W.ct=="sich" W.ct=="zwischen" W.ct=="dem" Hilfsannotation {-> MARK(MEDDATE, 9,9)};
+
+W.ct=="wird" W.ct=="am" Hilfsannotation ANY[0,15]? W.ct=="aufgenommen" {->MARK(MEDDATE,3,3)};
+W{REGEXP("berichte|berichten")} ANY[0,4]? Lemma{contains(Lemma.wordLemma,"vorstellung")} W.ct=="am" Hilfsannotation {->MARK(MEDDATE,5,5)};
+
+MEDDATE{->CREATE(Arztbriefdatum, "key"="MEDDATE", "value"=MEDDATE.ct), UNMARK(MEDDATE)};
+MEDDATE {-> UNMARKALL(MEDDATE)};
+Hilfsannotation {-> UNMARKALL(Hilfsannotation)};
+Unit {-> UNMARKALL(Unit)};
+
+
+//Anamnese: 
+
+W.ct=="Anamnese" COLON {-> CREATE(Anamnese,1,2, "key"="Anamnese")};
+W.ct=="Anamese" COLON {-> CREATE(Anamnese,1,2, "key"="Anamnese")};
+W.ct=="Amanese" COLON {-> CREATE(Anamnese,1,2, "key"="Anamnese")};
+W.ct=="Ananmese" COLON {-> CREATE(Anamnese,1,2, "key"="Anamnese")};
+W.ct=="Amamnese" COLON {-> CREATE(Anamnese,1,2, "key"="Anamnese")}; 
+W.ct=="Amanmese" COLON {-> CREATE(Anamnese,1,2, "key"="Anamnese")};
+W.ct=="Zwischenbericht" COLON {-> CREATE(Anamnese,1,2, "key"="Anamnese")};
+//Lemma{REGEXP(Lemma.wordLemma,"aktuell")} Lemma{REGEXP(Lemma.wordLemma,"beurteilung")} COLON {-> CREATE(Anamnese,1,3, "key"="Anamnese")};
+Lemma{contains(Lemma.wordLemma,"anamnese")} COLON {-> CREATE(Anamnese,1,2, "key"="Anamnese")};
+Lemma{contains(Lemma.wordLemma,"anamnese")} W? COLON {-> CREATE(Anamnese,1,3, "key"="Anamnese")};
+Lemma{contains(Lemma.wordLemma,"anamnese")} SPECIAL.ct=="(" W SPECIAL.ct==")" COLON {-> CREATE(Anamnese,1,5, "key"="Anamnese")};
+Lemma{contains(Lemma.wordLemma,"anamese")} COLON {-> CREATE(Anamnese,1,2, "key"="Anamnese")};
+Lemma{contains(Lemma.wordLemma,"amanese")} COLON {-> CREATE(Anamnese,1,2, "key"="Anamnese")};
+Lemma{contains(Lemma.wordLemma,"ananmese")} COLON {-> CREATE(Anamnese,1,2, "key"="Anamnese")};
+Lemma{contains(Lemma.wordLemma,"amamnese")} COLON {-> CREATE(Anamnese,1,2, "key"="Anamnese")}; 
+Lemma{contains(Lemma.wordLemma,"amanmese")} COLON {-> CREATE(Anamnese,1,2, "key"="Anamnese")};
+Lemma{contains(Lemma.wordLemma,"geschicht")} W? COLON {-> CREATE(Anamnese, 1,3, "key"="Anamnese")};
+//W{REGEXP("Herr|Frau",true)} W[1,2] W{REGEXP("berichtet|berichte") -> CREATE(Anamnese, 1,2, "key"="Anamnese")};
+
+
+//Liste enthält falsch positive Begriffe für Anamnese, zB Familienanamnese
+
+WORDLIST Anamnese_FPList = 'config/anamnese_FP.txt';
+Document {-> MARKFAST(Unit1, Anamnese_FPList, true, 2)};
+Unit1 COLON {->CREATE(Others,1,2,"key"="Others")};
+Unit1 W.ct=="am" ANY[1,6] COLON {-> CREATE(Others, 1,4, "key"="Others")};
+Unit1 W.ct=="vom" ANY[1,6] COLON {-> CREATE(Others, 1,4, "key"="Others")};
+Unit1 Lemma{REGEXP(Lemma.wordLemma,"an")} ANY[1,6]? COLON {-> CREATE(Others, 1,4, "key"="Others")};
+Unit1 Lemma{REGEXP(Lemma.wordLemma,"von")} ANY[1,6]? COLON {-> CREATE(Others, 1,4, "key"="Others")};
+Unit1{->UNMARKALL(Unit1)};
+CAP.ct=="FA" COLON {->CREATE(Others,1,2, "key"="Others")};
+CAP.ct=="SA" COLON {->CREATE(Others,1,2, "key"="Others")};
+CAP.ct=="VE" COLON {->CREATE(Diagnose,1,2, "key"="Diagnose")};
+W.ct=="An" W? W.ct=="Vorerkrankungen" W[1,3]? COLON {->CREATE(Diagnose,1,4,"key"="Diagnose")};
+W.ct=="Vorerkrankungen" COLON {->CREATE(Diagnose,1,2, "key"="Diagnose")};
+Lemma{contains(Lemma.wordLemma,"sozial")} Anamnese { ->CREATE(Others, 1,2, "key"="Others")};
+Anamnese{PARTOF(Others)-> UNMARK(Anamnese)};
+Anamnese{CONTAINS(Others)-> UNMARK(Anamnese)};
+Anamnese{PARTOF(Diagnose)-> UNMARK(Anamnese)};
+Anamnese{CONTAINS(Diagnose)-> UNMARK(Anamnese)};
+
+//Diagnose 
+
+Lemma{REGEXP(Lemma.wordLemma,"diagnose")} W.ct=="vom"? NUM? PERIOD? NUM? PERIOD? NUM? COLON {-> CREATE(Diagnose, 1,8, "key"="Diagnose")}; 
+Lemma{REGEXP(Lemma.wordLemma,"diagnose")} W.ct=="am"? NUM? PERIOD? NUM? PERIOD? NUM? COLON {-> CREATE(Diagnose, 1,8, "key"="Diagnose")}; 
+W.ct=="An"? Lemma{contains(Lemma.wordLemma,"erkrankung")} W[1,2]? COLON {-> CREATE(Diagnose, 1,3, "key"="Diagnose")}; 
+Lemma{contains(Lemma.wordLemma,"diagnostisch")} W.ct=="Beurteilung" COLON {-> CREATE(Diagnose, 1,3, "key"="Diagnose")};
+
+
+
+//Medikation
+WORDLIST MedikationList = 'config/medikation.txt';
+Document {-> MARKFAST(Unit1, MedikationList, true, 2) };
+Unit1 COLON {->CREATE(Medikation,1,2,"key"="Medikation")};
+Unit1 W.ct=="vom" ANY[1,6] COLON {-> CREATE(Medikation, 1,4, "key"="Medikation")};
+Unit1 W.ct=="am" ANY[1,6] COLON {-> CREATE(Medikation, 1,4, "key"="Medikation")};
+Unit1 Lemma{REGEXP(Lemma.wordLemma,"an")} ANY[1,6]? COLON {-> CREATE(Medikation, 1,4, "key"="Medikation")};
+Unit1 Lemma{REGEXP(Lemma.wordLemma,"von")} ANY[1,6]? COLON {-> CREATE(Medikation, 1,4, "key"="Medikation")};
+Unit1{->UNMARKALL(Unit1)};
+
+Lemma{contains(Lemma.wordLemma,"medikation")} W[1,2]? COLON {-> CREATE(Medikation,1,3, "key"="Medikation")};
+Lemma{contains(Lemma.wordLemma,"medikament")} W[1,2]? COLON { -> CREATE(Medikation,1,3, "key"="Medikation")};
+Lemma{contains(Lemma.wordLemma,"medikation")} COLON {-> CREATE(Medikation,1,2, "key"="Medikation")};
+Lemma{contains(Lemma.wordLemma,"medikament")} COLON { -> CREATE(Medikation,1,2, "key"="Medikation")};
+
+W.ct=="VM" W?? COLON { -> CREATE(Medikation,1,2, "key"="Medikation")};
+Lemma{contains(Lemma.wordLemma,"medikation")} Lemma{contains(Lemma.wordLemma,"nehmen")} W? W.ct=="ein" {-> CREATE(Medikation,1,4, "key"="Medikation")};
+Lemma{contains(Lemma.wordLemma,"medikament")} Lemma{contains(Lemma.wordLemma,"nehmen")} W? W.ct=="ein" {-> CREATE(Medikation,1,4, "key"="Medikation")};
+Lemma{contains(Lemma.wordLemma,"weit")} Lemma{contains(Lemma.wordLemma,"medikament")} W.ct=="sei" {-> CREATE(Medikation,1,3, "key"="Medikation")};
+Lemma{contains(Lemma.wordLemma,"weit")} Lemma{contains(Lemma.wordLemma,"medikation")} W.ct=="sei" {-> CREATE(Medikation,1,3, "key"="Medikation")};
+
+
+//Untersuchungsbefund
+
+WORDLIST BefundList = 'config/befund.txt';
+Document {-> MARKFAST(Unit1, BefundList, true, 2) };
+Unit1 COLON {-> CREATE(Untersuchungsbefund, 1,2, "key"="Untersuchungsbefund")};
+Unit1 W.ct=="vom" ANY[1,6] COLON {-> CREATE(Untersuchungsbefund, 1,4, "key"="Untersuchungsbefund")};
+Unit1 W.ct=="am" ANY[1,6] COLON {-> CREATE(Untersuchungsbefund, 1,4, "key"="Untersuchungsbefund")};
+Unit1 Lemma{REGEXP(Lemma.wordLemma,"an")} ANY[1,6]? COLON {-> CREATE(Untersuchungsbefund, 1,4, "key"="Untersuchungsbefund")};
+Unit1 Lemma{REGEXP(Lemma.wordLemma,"von")} ANY[1,6]? COLON {-> CREATE(Untersuchungsbefund, 1,4, "key"="Untersuchungsbefund")};
+Unit1 NUM PERIOD NUM PERIOD NUM COLON {-> CREATE(Untersuchungsbefund, 1,7, "key"="Untersuchungsbefund")};
+Unit1 SPECIAL.ct=="(" W SPECIAL.ct==")" {-> CREATE(Untersuchungsbefund, 1,4, "key"="Untersuchungsbefund")};
+Unit1{->UNMARKALL(Unit1)};
+
+Lemma{REGEXP(Lemma.wordLemma,"befund")} W? COLON {-> CREATE(Untersuchungsbefund, 1,3, "key"="Untersuchungsbefund")};
+Lemma{REGEXP(Lemma.wordLemma,"aufnahmebefund")} W? COLON {-> CREATE(Untersuchungsbefund, 1,3, "key"="Untersuchungsbefund")};
+Lemma{REGEXP(Lemma.wordLemma,"untersuchung")} W? COLON {-> CREATE(Untersuchungsbefund,1,3, "key"="Untersuchungsbefund")};
+Lemma{contains(Lemma.wordLemma, "neurologisch")} Lemma.wordLemma=="status" W? COLON {-> CREATE(Untersuchungsbefund, 1,4, "key"="Untersuchungsbefund")};
+Lemma{contains(Lemma.wordLemma, "somatisch")} Lemma.wordLemma=="status" W? COLON {-> CREATE(Untersuchungsbefund, 1,4, "key"="Untersuchungsbefund")};
+Lemma.wordLemma=="neurostatus" W? COLON {-> CREATE(Untersuchungsbefund, 1,3, "key"="Untersuchungsbefund")};
+W{REGEXP("AUFNAHMEBEFUND")} W? COLON {-> CREATE(Untersuchungsbefund, 1,3, "key"="Untersuchungsbefund")};
+Lemma{contains(Lemma.wordLemma,"orientierend")} Lemma{contains(Lemma.wordLemma,"psycho")}  ANY[1,7]? COLON { -> CREATE(Untersuchungsbefund, 1,4, "key"="Untersuchungsbefund")}; 
+Lemma{contains(Lemma.wordLemma,"orientierend")} Lemma{contains(Lemma.wordLemma,"neuro")}  ANY[1,7]? COLON { -> CREATE(Untersuchungsbefund, 1,4, "key"="Untersuchungsbefund")}; 
+Lemma{contains(Lemma.wordLemma, "psychologisch")} Lemma{contains(Lemma.wordLemma, "befund")} ANY[1,7]? COLON  {->CREATE(Untersuchungsbefund, 1,4, "key"="Untersuchungsbefund")};
+Lemma{contains(Lemma.wordLemma, "neuro")} Lemma{contains(Lemma.wordLemma, "test")} ANY[1,7]? COLON  {->CREATE(Untersuchungsbefund, 1,4, "key"="Untersuchungsbefund")};
+Lemma{REGEXP(Lemma.wordLemma, "erweitert")} Lemma{contains(Lemma.wordLemma, "psycho")} Lemma{contains(Lemma.wordLemma, "test") ->CREATE(Untersuchungsbefund, 1,3, "key"="Untersuchungsbefund")};
+
+//MiniMental
+W.ct=="Mini" SPECIAL? W.ct=="Mental" SPECIAL? W.ct=="Status" {->MARK(Unit1, 1,5)};
+W.ct=="Mini" SPECIAL? W.ct=="Mental" SPECIAL? W.ct=="Status" SPECIAL? W.ct=="Test" {->MARK(Unit1, 1,7)};
+W.ct=="Mini" SPECIAL? W.ct=="Mental" SPECIAL? W.ct=="State" {->MARK(Unit1, 1,5)};
+W.ct=="Mini" SPECIAL? W.ct=="Mental" SPECIAL? W.ct=="State" SPECIAL? W.ct=="Test" {->MARK(Unit1, 1,7)};
+W.ct=="MMST" {->MARK(Unit1, 1,1)};
+W.ct=="MMSE" {->MARK(Unit1, 1,1)};
+
+WORDLIST MMSTList = 'config/mmst.txt';
+Document {-> MARKFAST(Unit1, MMSTList, true, 2)};
+
+Unit1 COLON {->CREATE(MiniMental,1,2,"key"="MiniMental")};
+Unit1 NUM PERIOD NUM PERIOD NUM COLON {->CREATE(MiniMental,1,7,"key"="MiniMental")};
+Unit1 W.ct=="vom" ANY[1,6]? COLON {-> CREATE(MiniMental, 1,4, "key"="MiniMental")};
+Unit1 W.ct=="am" ANY[1,6]? COLON {-> CREATE(MiniMental, 1,4, "key"="MiniMental")};
+Unit1 Lemma{REGEXP(Lemma.wordLemma,"an")} ANY[1,6]? COLON {-> CREATE(MiniMental, 1,4, "key"="MiniMental")};
+Unit1 Lemma{REGEXP(Lemma.wordLemma,"von")} ANY[1,6]? COLON {-> CREATE(MiniMental, 1,4, "key"="MiniMental")};
+Unit1 W.ct=="mit" ANY[1,6]? Lemma{contains(Lemma.wordLemma,"punkt") -> CREATE(MiniMental,1,1,"key"="MiniMental")};
+Unit1 W.ct=="mit" ANY[1,6]? W.ct=="Pkt" {->CREATE(MiniMental,1,1,"key"="MiniMental")};
+Unit1 NUM W.ct=="von" NUM {->CREATE(MiniMental,1,1,"key"="MiniMental")};
+Unit1 NUM SPECIAL NUM {->CREATE(MiniMental,1,1,"key"="MiniMental")};
+Unit1 W.ct=="erzielt" ANY[0,3] NUM ANY NUM {-> CREATE(MiniMental,1,1,"key"="MiniMental")};
+Unit1 W.ct=="erzielte" ANY[0,3] NUM ANY NUM {-> CREATE(MiniMental,1,1,"key"="MiniMental")};
+
+Unit1{->UNMARKALL(Unit1)};
+
+
+//Epikrise
+
+Lemma{REGEXP(Lemma.wordLemma,"epikrise")} COLON {-> CREATE(Epikrise, 1,2, "key"="Epikrise")};
+Lemma{REGEXP(Lemma.wordLemma,"epikrise")} COLON W W.ct=="Beurteilung" COLON {-> CREATE(Epikrise, 1,5, "key"="Epikrise")};
+Lemma{REGEXP(Lemma.wordLemma,"epikrise")} COLON W.ct=="Beurteilung" COLON {-> CREATE(Epikrise, 1,4, "key"="Epikrise")};
+
+//Freitext
+
+Lemma{REGEXP(Lemma.wordLemma, "freitext")} COLON {-> CREATE(Freitext, 1,2, "key"="Freitext")};
+
+
+//Unspezifische Header definieren um sie als Trennung zu verwenden:  -> Others  
+
+Lemma{REGEXP(Lemma.wordLemma,"allergie")} W? COLON {-> CREATE(Others,1,3, "key"="Others")};
+Lemma{REGEXP(Lemma.wordLemma,"anliegen")} W? COLON {-> CREATE(Others,1,3, "key"="Others")};
+Lemma{REGEXP(Lemma.wordLemma,"datum")} W? COLON {-> CREATE(Others,1,3, "key"="Others")};
+Lemma{REGEXP(Lemma.wordLemma,"anbindung")} W? COLON {-> CREATE(Others,1,3, "key"="Others")};
+Lemma{REGEXP(Lemma.wordLemma, "faktor")} W? COLON  {->CREATE(Others,1,3, "key"="Others")};
+Lemma{REGEXP(Lemma.wordLemma, "drogenkonsum")} W W.ct=="Aufnahme" {->CREATE(Others, 1,3, "key"="Others")};
+Lemma{REGEXP(Lemma.wordLemma, "alkohol")} W W.ct=="Aufnahme" W? COLON  {->CREATE(Others, 1, 4, "key"="Others")};
+Lemma.wordLemma=="durstversuch" COLON  {->CREATE(Others, 1,2, "key"="Others")};
+Lemma{REGEXP(Lemma.wordLemma, "beschwerde")} COLON  {->CREATE(Others, 1,2, "key"="Others")};
+//Lemma{REGEXP(Lemma.wordLemma, "erkrankung")} COLON  {->CREATE(Others, 1,2, "key"="Others")};
+Lemma{REGEXP(Lemma.wordLemma, "vorbehandlung")} COLON  {->CREATE(Others, 1,2, "key"="Others")};
+Lemma{REGEXP(Lemma.wordLemma, "droge")} W[1,3]? W.ct=="nachweisbar" COLON  {->CREATE(Others, 1,4, "key"="Others")};
+Lemma{contains(Lemma.wordLemma, "mikrobio")} W[1,5]? COLON  {->CREATE(Others, 1,3, "key"="Others")};
+Lemma.wordLemma=="strategie" COLON { -> CREATE(Others, 1,2, "key"="Others")};
+Lemma.wordLemma=="suizidalität" COLON {-> CREATE(Others,1,2, "key"="Others")};
+Lemma{REGEXP(Lemma.wordLemma, "beurteilung|internistisch|betreuer|symptomatik|behandlungsverlauf|bildgebung|allgemeinzustand|kontrolle|aufnahmeanlass|testbatterie|immunfixation|konsil|kontrastmittelmenge|liquor|liquordiagnostik|findings|serum|physiotherapie|diseases|primärpersönlichkeit")} COLON { -> CREATE(Others, 1,2, "key"="Others")};
+Lemma{contains(Lemma.wordLemma,"mit")} Lemma{contains(Lemma.wordLemma,"freundlich")} W? Lemma{contains(Lemma.wordLemma,"grüße")} COMMA? {->CREATE(Others,1,5,"key"="Others")};
+Lemma{contains(Lemma.wordLemma,"sehr")} Lemma{contains(Lemma.wordLemma,"geehrt")} W W.ct=="und" W {->CREATE(Others,1,5,"key"="Others")};
+Lemma{contains(Lemma.wordLemma, "suchtmittelkonsum")} W.ct=="bei" W.ct=="Aufnahme" COLON  {->CREATE(Others, 1,4, "key"="Others")};
+Lemma{contains(Lemma.wordLemma, "substitution")} W.ct=="bei" W.ct=="Aufnahme" COLON  {->CREATE(Others, 1,4, "key"="Others")};
+Lemma{contains(Lemma.wordLemma, "promille")} W.ct=="bei" W.ct=="Aufnahme" COLON  {->CREATE(Others, 1,4, "key"="Others")};
+CAP.ct=="EKG" W[1,15]? COLON  {->CREATE(Others, 1,3, "key"="Others")};
+Lemma{REGEXP(Lemma.wordLemma,"für")} Lemma{REGEXP(Lemma.wordLemma,"rückfrage") ->CREATE(Others,1,2,"key"="Others")};
+Lemma{REGEXP(Lemma.wordLemma,"bei")} Lemma{REGEXP(Lemma.wordLemma,"rückfrage") ->CREATE(Others,1,2,"key"="Others")};
+
+WORDLIST OthersList = 'config/others.txt';
+  Document {-> MARKFAST(Unit1, OthersList, true, 2) };
+CAP.ct=="PET" SPECIAL CAP.ct=="CT" {->MARK(Unit1,1,3)};
+CAP.ct=="EEG" {->MARK(Unit1,1,1)};
+CAP.ct=="EKG" {->MARK(Unit1,1,1)};
+CAP.ct=="CCT" {->MARK(Unit1,1,1)};
+CAP.ct=="MRT" {->MARK(Unit1,1,1)};
+Unit1 COLON {->CREATE(Others,1,2,"key"="Others")};
+Unit1 W.ct=="vom" ANY[1,6] COLON {-> CREATE(Others, 1,4, "key"="Others")};
+Unit1 W.ct=="am" ANY[1,6] COLON {-> CREATE(Others, 1,4, "key"="Others")};
+Unit1 Lemma{REGEXP(Lemma.wordLemma,"an")} ANY[1,6]? COLON {-> CREATE(Others, 1,4, "key"="Others")};
+Unit1 Lemma{REGEXP(Lemma.wordLemma,"von")} ANY[1,6]? COLON {-> CREATE(Others, 1,4, "key"="Others")};
+Unit1 SPECIAL.ct=="(" W SPECIAL.ct==")" {->CREATE(Others,1,4,"key"="Others")};
+Unit1{->UNMARKALL(Unit1)};
+
+Others{PARTOF(Epikrise)->UNMARK(Others)};
+Others{PARTOF(MiniMental)->UNMARK(Others)};
+
+//Header vereinen und SHIFT einzelne Header 
+Anamnese {->MARK(Hilfsannotation)};
+Diagnose {->MARK(Hilfsannotation)};
+Medikation {->MARK(Hilfsannotation)};
+Untersuchungsbefund {->MARK(Hilfsannotation)};
+MiniMental {->MARK(Hilfsannotation)};
+Epikrise {->MARK(Hilfsannotation)};
+Freitext {->MARK(Hilfsannotation)};
+Others {->MARK(Hilfsannotation)};
+
+
+//Shift paragraphs until next one begins or to the end of the document 
+Anamnese { -> SHIFT(Anamnese, 1,2)} ANY*? Hilfsannotation;
+Diagnose { -> SHIFT(Diagnose, 1,2)} ANY*? Hilfsannotation;
+Medikation { -> SHIFT(Medikation, 1,2)} ANY*? Hilfsannotation;
+Untersuchungsbefund { -> SHIFT(Untersuchungsbefund, 1,2)} ANY*? Hilfsannotation;
+MiniMental { -> SHIFT(MiniMental, 1,2)} ANY*? Hilfsannotation;
+Epikrise { -> SHIFT(Epikrise, 1,2)} ANY*? Hilfsannotation;
+Freitext { -> SHIFT(Freitext, 1,2)} ANY*? Hilfsannotation;
+Others { -> SHIFT(Others, 1,2)} ANY*? Hilfsannotation;
+
+Document{->MARKLAST(Unit2)};
+ANY{CONTAINS(Unit2) -> MARK(Unit)};
+
+Anamnese {->SHIFT (Anamnese ,1,3)} ANY*?{AND(-PARTOF(Hilfsannotation), -PARTOF(Unit))} Unit;
+Diagnose {->SHIFT (Diagnose ,1,3)} ANY*?{AND(-PARTOF(Hilfsannotation), -PARTOF(Unit))} Unit;
+Medikation {->SHIFT (Medikation,1,3)} ANY*?{AND(-PARTOF(Hilfsannotation), -PARTOF(Unit))} Unit;
+Untersuchungsbefund {->SHIFT (Untersuchungsbefund,1,3)} ANY*?{AND(-PARTOF(Hilfsannotation), -PARTOF(Unit))} Unit;
+Others {->SHIFT (Others,1,3)} ANY*?{AND(-PARTOF(Hilfsannotation), -PARTOF(Unit))} Unit;
+MiniMental {->SHIFT (MiniMental,1,3)} ANY*?{AND(-PARTOF(Hilfsannotation), -PARTOF(Unit))} Unit;
+Epikrise {->SHIFT (Epikrise,1,3)} ANY*?{AND(-PARTOF(Hilfsannotation), -PARTOF(Unit))} Unit;
+Freitext {->SHIFT (Freitext,1,3)} ANY*?{AND(-PARTOF(Hilfsannotation), -PARTOF(Unit))} Unit;
+
+//cleaning
+Hilfsannotation {-> UNMARK(Hilfsannotation)};
+Unit{->UNMARKALL(Unit)};
+Unit1{->UNMARKALL(Unit1)};
+Unit2{->UNMARKALL(Unit2)};

@@ -1,0 +1,484 @@
+DECLARE CAP, SEMICOLON, W, COLON, SPECIAL, PERIOD, CW, SW, ANY, ALL;
+DECLARE Table, Z_Unit, SW_Unit, RW_Unit, SEK_Unit;
+DECLARE CognitiveTest, BostonNamingTest,VerbFluessigkeit, MMST, TMTPfadfinderTeilA, TMTPfadfinderTeilB, TMTPfadfinderTeilBdivA, WortlisteTotal, Wortliste1, Wortliste2, Wortliste3, SavingsWL, SavingsFIG, PhonFluessigkeit, WortlisteIntrusionen, WortlisteAbrufen, WortlisteDiskrim, FigurenAbrufen, FigurenAbzeichnen; 
+DECLARE Z_BNTTOT, Z_VFATOT, Z_MMSTOT, Z_TMTA, Z_TMTB, Z_TMTBA, Z_CERRL, Z_CERRL1CT, Z_CERRL2CT, Z_CERRL3CT, Z_CERDRLCT, Z_CERDRLIT, Z_CERWLSAV, Z_CERDISC, Z_CERCP, Z_CERCPR, Z_CERCPSAV, Z_PFSTOT;
+DECLARE SW_BNTTOT, SW_VFATOT, SW_MMSTOT, SW_TMTA, SW_TMTB, SW_TMTBA, SW_CERRL, SW_CERRL1CT, SW_CERRL2CT, SW_CERRL3CT, SW_CERDRLCT, SW_CERDRLIT, SW_CERWLSAV, SW_CERDISC, SW_CERCP, SW_CERCPR, SW_CERCPSAV, SW_PFSTOT;
+DECLARE RW_BNTTOT, RW_VFATOT, RW_MMSTOT, RW_TMTA, RW_TMTB, RW_TMTBA, RW_CERRL, RW_CERRL1CT, RW_CERRL2CT, RW_CERRL3CT, RW_CERDRLCT, RW_CERDRLIT, RW_CERWLSAV, RW_CERDISC, RW_CERCP, RW_CERCPR, RW_CERCPSAV, RW_PFSTOT;
+DECLARE Untersuchungsdatum;
+DECLARE UDATUM;
+
+// annotate Boston Naming Test, Verbale Flüssigkeit, TMT etc. 
+
+
+BLOCK(NDDScales) Document{} {
+
+    CW{REGEXP("Testdatum") -> MARK(Untersuchungsdatum, 1, 1)};
+    CW{REGEXP("Datum")} W W.ct=="Testuntersuchung" {-> MARK(Untersuchungsdatum, 1, 3)};
+    Untersuchungsdatum ANY[0,6]? Untersuchungsdatum {-> UNMARK(Untersuchungsdatum, 1)};
+
+    CW{REGEXP("Boston")} W W {-> MARK(BostonNamingTest, 1,3)};
+    CW{REGEXP("Von")} NUM W.ct=="Bildern" W W W W {-> MARK(BostonNamingTest, 1,3)};
+    BostonNamingTest ANY[0,6]? BostonNamingTest {-> UNMARK(BostonNamingTest, 1)};
+
+    W{REGEXP("Wortliste")} SPECIAL W.ct=="Verbales" W SPECIAL {-> MARK(WortlisteTotal, 1,5)};
+    W{REGEXP("Summe")} W NUM W SPECIAL.ct=="(" W PERIOD NUM SPECIAL.ct==")" {-> MARK(WortlisteTotal, 1, 4)};
+    WortlisteTotal ANY[0,12]? WortlisteTotal {-> UNMARK(WortlisteTotal, 1)};
+
+    W{REGEXP("Nach")} W W.ct == "ersten" W.ct == "Lerndurchgang" {-> MARK(Wortliste1, 1, 4)};
+
+    W{REGEXP("Nach")} W W.ct == "zweiten" W.ct == "Lerndurchgang" {-> MARK(Wortliste2, 1, 4)};
+
+    W{REGEXP("Unmittelbar")} W W W.ct == "dritten" W.ct == "Lerndurchgang" {-> MARK(Wortliste3, 1, 5)};
+
+    CW{REGEXP("Verb|Verbale")} PERIOD? W SW{REGEXP("kateg|kategorial")} PERIOD? {-> MARK (VerbFluessigkeit, 1, 5)};
+    CW{REGEXP("Genannte")} W.ct=="Worte" SPECIAL? W{REGEXP("Kategorie|Anfangsbuchstabe")} SPECIAL? W SPECIAL? COMMA? NUM? W PERIOD? SPECIAL? {-> MARK (VerbFluessigkeit, 1, 2)};
+    VerbFluessigkeit ANY[0,12]? VerbFluessigkeit {-> UNMARK(VerbFluessigkeit, 1)};
+
+    CW{REGEXP("Verb|Verbale")} PERIOD? W SW{REGEXP("phon|phone|phonematisch")} PERIOD? {-> MARK(PhonFluessigkeit, 1,5)};
+    PhonFluessigkeit ANY[0,12]? VerbFluessigkeit {-> UNMARK(VerbFluessigkeit)};
+
+    CW{REGEXP("Abrufen")} W W {-> MARK(WortlisteAbrufen, 1,3)};
+
+    CW{REGEXP("Intrusionen")} W? {-> MARK(WortlisteIntrusionen, 1,1)};
+
+    CW{REGEXP("Savings")} W.ct=="Wortliste" SPECIAL.ct=="("? W? W? SPECIAL.ct==")"? {-> MARK(SavingsWL, 1,6)};
+    CW{REGEXP("Savings")} SPECIAL.ct=="(" W W SPECIAL.ct==")" {-> MARK(SavingsWL, 1, 5)};
+    SavingsWL ANY[0,6]? SavingsWL {-> UNMARK(SavingsWL, 1)};
+
+    CW{REGEXP("^Savings(?!\\S)") -> MARK(SavingsFIG, 1,1)};
+    
+    SavingsWL{CONTAINS(SavingsFIG)} -> {SavingsFIG {-> UNMARK(SavingsFIG)};};
+
+    W{REGEXP("Diskriminabilit(.)t")} SPECIAL.ct == "("? W? W? SPECIAL.ct == ")"? {-> MARK(WortlisteDiskrim, 1,1)};    
+
+    CW{REGEXP("Direktes")} W.ct == "Abzeichnen" {-> MARK(FigurenAbzeichnen, 1,2)};
+
+    W{REGEXP("Verz(.)gerte")} W.ct == "Wiedergabe" {-> MARK(FigurenAbrufen, 1,2)};
+
+    CW{REGEXP("Mini")} SPECIAL.ct == "-" W SPECIAL.ct == "-" W W {-> MARK(MMST, 1, 6)};
+    CW{REGEXP("Gesamtpunkte")} SPECIAL.ct=="(" W PERIOD NUM SPECIAL.ct==")" {-> MARK(MMST, 1, 6)};
+    MMST ANY[0,6]? MMST {-> UNMARK(MMST,1)};
+      
+    W{REGEXP("Teil")} W.ct == "A" {-> MARK(TMTPfadfinderTeilA, 1, 2)};
+
+    W{REGEXP("Teil")} W.ct == "B" {-> MARK(TMTPfadfinderTeilB, 1, 2)};
+
+    //annotate TMTPfadfinderTeilBdivA with help of TMTA and TMTB
+    Table {}-> {TMTPfadfinderTeilB SPECIAL.ct == "/" W.ct== "A" {-> MARK(TMTPfadfinderTeilBdivA, 1, 3)}; };
+
+        //delete TMTA and TMTB within TMTB/A
+    TMTPfadfinderTeilBdivA{CONTAINS(TMTPfadfinderTeilB)} -> {TMTPfadfinderTeilB{-> UNMARK(TMTPfadfinderTeilB)};};
+    TMTPfadfinderTeilBdivA{CONTAINS(TMTPfadfinderTeilA)} -> {TMTPfadfinderTeilA{-> UNMARK(TMTPfadfinderTeilA)};};
+    
+ 
+}    
+
+
+//use predefined Table Annotation to detect key "Z", "SW", and "PR"
+BLOCK(Key) Document{} {
+ 
+Table {}-> {SEMICOLON W{REGEXP("Z|z") -> Z_Unit} COLON SEMICOLON;};
+Table {}-> {SEMICOLON W{REGEXP("RW") -> RW_Unit} COLON SEMICOLON;};
+Table {}-> {SEMICOLON W{REGEXP("SW") -> SW_Unit} COLON SEMICOLON;};
+Table {}-> {SEMICOLON W{REGEXP("Sek")-> SEK_Unit} PERIOD? COLON SEMICOLON;};
+}
+
+// annotate corresponding Z value for Boston Naming Test etc
+BLOCK(Value) Document{} {
+Table {}-> {Untersuchungsdatum COLON SEMICOLON NUM PERIOD NUM PERIOD NUM SEMICOLON 
+    {-> MARK(UDATUM, 4,8)};
+  };
+
+Table {}-> {Untersuchungsdatum COLON SEMICOLON NUM PERIOD NUM PERIOD NUM SPECIAL NUM PERIOD NUM PERIOD NUM SEMICOLON 
+    {-> MARK(UDATUM, 4,14)};
+  };
+
+Table {}-> {BostonNamingTest ANY[1,22]? Z_Unit COLON SEMICOLON SPECIAL.ct == "-"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_BNTTOT, 6, 11)};
+ };
+
+Table {}-> {VerbFluessigkeit ANY[1,30]? Z_Unit COLON SEMICOLON SPECIAL.ct == "-"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_VFATOT, 6, 11)};
+ };
+
+Table {}-> {MMST ANY[1,30]? Z_Unit COLON SEMICOLON SPECIAL.ct == "-"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_MMSTOT, 6, 11)};
+ };
+
+Table {}-> {TMTPfadfinderTeilA ANY[1,12]? Z_Unit COLON SEMICOLON SPECIAL.ct == "-"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_TMTA, 6, 11)};
+ };
+
+Table {}-> {TMTPfadfinderTeilB ANY[1,12]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_TMTB, 6, 12)};
+ };
+
+Table {}-> {TMTPfadfinderTeilBdivA ANY[1,12]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_TMTBA, 6, 12)};
+ };
+
+Table {}-> {WortlisteTotal ANY[1,30]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_CERRL, 6, 12)};
+ };
+
+Table {}-> {Wortliste1 ANY[1,22]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_CERRL1CT, 6, 12)};
+   };
+
+Table {}-> {Wortliste2 ANY[1,22]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_CERRL2CT, 6, 12)};
+   };
+
+Table {}-> {Wortliste3 ANY[1,22]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_CERRL3CT, 6, 12)};
+   };
+
+Table {}-> {SavingsWL ANY[1,22]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_CERWLSAV, 6, 12)};
+   };
+
+Table {}-> {SavingsFIG ANY[1,22]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_CERCPSAV, 6, 12)};
+   };
+
+Table {}-> {WortlisteDiskrim ANY[1,22]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_CERDISC, 6, 12)};
+   };
+
+Table {}-> {PhonFluessigkeit ANY[1,30]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_PFSTOT, 6, 12)};
+   };
+
+
+Table {}-> {WortlisteAbrufen ANY[1,22]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_CERDRLCT, 6, 12)};
+   };
+
+Table {}-> {WortlisteIntrusionen ANY[1,22]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_CERDRLIT, 6, 12)};
+   };
+
+Table {}-> {FigurenAbzeichnen ANY[1,22]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_CERCP, 6, 12)};
+   };
+
+Table {}-> {FigurenAbrufen ANY[1,22]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(Z_CERCPR, 6, 12)};   
+    };
+
+//RW Werte mit RW_Unit
+
+Table {}-> {BostonNamingTest ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "-"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_BNTTOT, 6, 11)};
+ };
+
+Table {}-> {VerbFluessigkeit ANY[1,30]? RW_Unit COLON SEMICOLON SPECIAL.ct == "-"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_VFATOT, 6, 11)};
+ };
+
+Table {}-> {MMST ANY[1,30]? RW_Unit COLON SEMICOLON SPECIAL.ct == "-"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_MMSTOT, 6, 11)};
+ };
+
+Table {}-> {TMTPfadfinderTeilA ANY[1,12]? SEK_Unit PERIOD? COLON SEMICOLON SPECIAL.ct == ">"? SPECIAL.ct == "<"? NUM[1,4] SEMICOLON 
+    {-> MARK(RW_TMTA, 7, 9)};
+ };
+
+Table {}-> {TMTPfadfinderTeilB ANY[1,12]? SEK_Unit PERIOD? COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == ">"? NUM[1,4] SEMICOLON 
+    {-> MARK(RW_TMTB, 7, 9)};
+ };
+
+Table {}-> {TMTPfadfinderTeilA ANY[1,12]? RW_Unit COLON SEMICOLON SPECIAL.ct == "-"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_TMTA, 6, 11)};
+ };
+
+Table {}-> {TMTPfadfinderTeilB ANY[1,12]? RW_Unit COLON SEMICOLON SPECIAL.ct == ">"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_TMTB, 6, 12)};
+ };
+
+Table {}-> {TMTPfadfinderTeilBdivA ANY[1,12]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_TMTBA, 6, 12)};
+ };
+
+Table {}-> {WortlisteTotal ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_CERRL, 6, 12)};
+ };
+
+Table {}-> {Wortliste1 ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_CERRL1CT, 6, 12)};
+   };
+
+Table {}-> {Wortliste2 ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_CERRL2CT, 6, 12)};
+   };
+
+Table {}-> {Wortliste3 ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_CERRL3CT, 6, 12)};
+   };
+
+Table {}-> {SavingsWL ANY[1,30]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM[1,3] COMMA? PERIOD? NUM? SPECIAL.ct == "%"? SEMICOLON 
+    {-> MARK(RW_CERWLSAV, 6, 12)};
+   };
+
+Table {}-> {SavingsFIG ANY[1,30]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM[1,3] COMMA? PERIOD? NUM? SPECIAL.ct == "%"? SEMICOLON 
+    {-> MARK(RW_CERCPSAV, 6, 12)};
+   };
+
+Table {}-> {WortlisteDiskrim ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM[1,3]? COMMA? PERIOD? NUM? SPECIAL.ct == "%"? SEMICOLON 
+    {-> MARK(RW_CERDISC, 6, 12)};
+   };
+
+Table {}-> {PhonFluessigkeit ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_PFSTOT, 6, 12)};
+   };
+
+Table {}-> {WortlisteAbrufen ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_CERDRLCT, 6, 12)};
+   };
+
+Table {}-> {WortlisteIntrusionen ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_CERDRLIT, 6, 12)};
+   };
+
+Table {}-> {FigurenAbzeichnen ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_CERCP, 6, 12)};
+   };
+
+Table {}-> {FigurenAbrufen ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(RW_CERCPR, 6, 12)};   
+    };
+	
+//SW Werte mit SW_Unit
+Table {}-> {BostonNamingTest ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "-"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_BNTTOT, 6, 11)};
+ };
+
+Table {}-> {VerbFluessigkeit ANY[1,30]? SW_Unit COLON SEMICOLON SPECIAL.ct == "-"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_VFATOT, 6, 11)};
+ };
+
+Table {}-> {MMST ANY[1,30]? SW_Unit COLON SEMICOLON SPECIAL.ct == "-"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_MMSTOT, 6, 11)};
+ };
+
+Table {}-> {TMTPfadfinderTeilA ANY[1,12]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? SPECIAL.ct == ">"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_TMTA, 6, 11)};
+ };
+
+Table {}-> {TMTPfadfinderTeilB ANY[1,12]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == ">"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_TMTB, 6, 12)};
+ };
+
+Table {}-> {TMTPfadfinderTeilBdivA ANY[1,12]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_TMTBA, 6, 12)};
+ };
+
+Table {}-> {WortlisteTotal ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_CERRL, 6, 12)};
+ };
+
+Table {}-> {Wortliste1 ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_CERRL1CT, 6, 12)};
+   };
+
+Table {}-> {Wortliste2 ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_CERRL2CT, 6, 12)};
+   };
+
+Table {}-> {Wortliste3 ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_CERRL3CT, 6, 12)};
+   };
+
+Table {}-> {SavingsWL ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_CERWLSAV, 6, 12)};
+   };
+
+Table {}-> {SavingsFIG ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_CERCPSAV, 6, 12)};
+   };
+
+Table {}-> {WortlisteDiskrim ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_CERDISC, 6, 12)};
+   };
+
+Table {}-> {PhonFluessigkeit ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_PFSTOT, 6, 12)};
+   };
+
+Table {}-> {WortlisteAbrufen ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_CERDRLCT, 6, 12)};
+   };
+
+Table {}-> {WortlisteIntrusionen ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_CERDRLIT, 6, 12)};
+   };
+
+Table {}-> {FigurenAbzeichnen ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_CERCP, 6, 12)};
+   };
+
+Table {}-> {FigurenAbrufen ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
+    {-> MARK(SW_CERCPR, 6, 12)};   
+    };
+}
+
+
+//Remove annotations covering only text
+BLOCK(Removing) Document{} {
+
+BostonNamingTest {-> UNMARK(BostonNamingTest)};   
+VerbFluessigkeit {->UNMARK(VerbFluessigkeit)};
+MMST {->UNMARK(MMST)};
+TMTPfadfinderTeilA {->UNMARK(TMTPfadfinderTeilA)};
+TMTPfadfinderTeilB {->UNMARK(TMTPfadfinderTeilB)};
+TMTPfadfinderTeilBdivA {->UNMARK(TMTPfadfinderTeilBdivA)}; 
+WortlisteTotal {->UNMARK(WortlisteTotal)};
+Wortliste1 {->UNMARK(Wortliste1)};
+Wortliste2 {->UNMARK(Wortliste2)};
+Wortliste3 {->UNMARK(Wortliste3)};
+SavingsWL {->UNMARK(SavingsWL)};
+SavingsFIG {->UNMARK(SavingsFIG)};
+WortlisteDiskrim {->UNMARK(WortlisteDiskrim)};
+PhonFluessigkeit {->UNMARK(PhonFluessigkeit)};
+WortlisteAbrufen {->UNMARK(WortlisteAbrufen)};
+WortlisteIntrusionen {->UNMARK(WortlisteIntrusionen)};
+FigurenAbzeichnen {->UNMARK(FigurenAbzeichnen)};
+FigurenAbrufen {->UNMARK(FigurenAbrufen)};
+Untersuchungsdatum {->UNMARK(Untersuchungsdatum)};
+    
+}
+
+
+//Create appropriate annotations for values including the features key and value
+BLOCK(KeyValue) Document{} { 
+//DATUM
+UDATUM{->CREATE(Untersuchungsdatum, "value"=UDATUM.ct, "key"="UDATUM")};
+//Z Werte
+Z_BNTTOT{->CREATE(BostonNamingTest, "value"=Z_BNTTOT.ct, "key"="Z_BNTTOT")};    
+Z_VFATOT{->CREATE(VerbFluessigkeit, "value"=Z_VFATOT.ct, "key"="Z_VFATOT")};
+Z_MMSTOT{->CREATE(MMST, "value"=Z_MMSTOT.ct, "key"="Z_MMSTOT")};
+Z_TMTA{->CREATE(TMTPfadfinderTeilA, "value"=Z_TMTA.ct, "key"="Z_TMTA")};
+Z_TMTB{->CREATE(TMTPfadfinderTeilB, "value"=Z_TMTB.ct, "key"="Z_TMTB")};
+Z_TMTBA{->CREATE(TMTPfadfinderTeilBdivA, "value"=Z_TMTBA.ct, "key"="Z_TMTBA")};
+Z_CERRL{->CREATE(WortlisteTotal, "value"=Z_CERRL.ct, "key"="Z_CERRL")};
+Z_CERRL1CT{->CREATE(Wortliste1 ,"value"=Z_CERRL1CT.ct, "key"="Z_CERRL1CT")};
+Z_CERRL2CT{->CREATE(Wortliste2 ,"value"=Z_CERRL2CT.ct, "key"="Z_CERRL2CT")};
+Z_CERRL3CT{->CREATE(Wortliste3 ,"value"=Z_CERRL3CT.ct, "key"="Z_CERRL3CT")};
+Z_CERWLSAV{->CREATE(SavingsWL ,"value"=Z_CERWLSAV.ct,"key"="Z_CERWLSAV")};
+Z_CERCPSAV{->CREATE(SavingsFIG ,"value"=Z_CERCPSAV.ct,"key"="Z_CERCPSAV")};
+Z_CERDISC{->CREATE(WortlisteDiskrim ,"value"=Z_CERDISC.ct, "key"="Z_CERDISC")};
+Z_PFSTOT{->CREATE(PhonFluessigkeit ,"value"=Z_PFSTOT.ct, "key"="Z_PFSTOT")};
+Z_CERDRLCT{->CREATE(WortlisteAbrufen ,"value"=Z_CERDRLCT.ct, "key"="Z_CERDRLCT")};
+Z_CERDRLIT{->CREATE(WortlisteIntrusionen ,"value"=Z_CERDRLIT.ct, "key"="Z_CERDRLIT")};
+Z_CERCP{->CREATE(FigurenAbzeichnen ,"value"=Z_CERCP.ct, "key"="Z_CERCP")};
+Z_CERCPR{->CREATE(FigurenAbrufen ,"value"=Z_CERCPR.ct, "key"="Z_CERCPR")};
+//RW-Werte
+RW_BNTTOT{->CREATE(BostonNamingTest, "value"=RW_BNTTOT.ct, "key"="RW_BNTTOT")};    
+RW_VFATOT{->CREATE(VerbFluessigkeit, "value"=RW_VFATOT.ct, "key"="RW_VFATOT")};
+RW_MMSTOT{->CREATE(MMST, "value"=RW_MMSTOT.ct, "key"="RW_MMSTOT")};
+RW_TMTA{->CREATE(TMTPfadfinderTeilA, "value"=RW_TMTA.ct, "key"="RW_TMTA")};
+RW_TMTB{->CREATE(TMTPfadfinderTeilB, "value"=RW_TMTB.ct, "key"="RW_TMTB")};
+RW_TMTBA{->CREATE(TMTPfadfinderTeilBdivA, "value"=RW_TMTBA.ct, "key"="RW_TMTBA")};
+RW_CERRL{->CREATE(WortlisteTotal, "value"=RW_CERRL.ct, "key"="RW_CERRL")};
+RW_CERRL1CT{->CREATE(Wortliste1 ,"value"=RW_CERRL1CT.ct, "key"="RW_CERRL1CT")};
+RW_CERRL2CT{->CREATE(Wortliste2 ,"value"=RW_CERRL2CT.ct, "key"="RW_CERRL2CT")};
+RW_CERRL3CT{->CREATE(Wortliste3 ,"value"=RW_CERRL3CT.ct, "key"="RW_CERRL3CT")};
+RW_CERWLSAV{->CREATE(SavingsWL ,"value"=RW_CERWLSAV.ct,"key"="RW_CERWLSAV")};
+RW_CERCPSAV{->CREATE(SavingsFIG ,"value"=RW_CERCPSAV.ct,"key"="RW_CERCPSAV")};
+RW_CERDISC{->CREATE(WortlisteDiskrim ,"value"=RW_CERDISC.ct, "key"="RW_CERDISC")};
+RW_PFSTOT{->CREATE(PhonFluessigkeit ,"value"=RW_PFSTOT.ct, "key"="RW_PFSTOT")};
+RW_CERDRLCT{->CREATE(WortlisteAbrufen ,"value"=RW_CERDRLCT.ct, "key"="RW_CERDRLCT")};
+RW_CERDRLIT{->CREATE(WortlisteIntrusionen ,"value"=RW_CERDRLIT.ct, "key"="RW_CERDRLIT")};
+RW_CERCP{->CREATE(FigurenAbzeichnen ,"value"=RW_CERCP.ct, "key"="RW_CERCP")};
+RW_CERCPR{->CREATE(FigurenAbrufen ,"value"=RW_CERCPR.ct, "key"="RW_CERCPR")};
+//SW-Werte
+SW_BNTTOT{->CREATE(BostonNamingTest, "value"=SW_BNTTOT.ct, "key"="SW_BNTTOT")};    
+SW_VFATOT{->CREATE(VerbFluessigkeit, "value"=SW_VFATOT.ct, "key"="SW_VFATOT")};
+SW_MMSTOT{->CREATE(MMST, "value"=SW_MMSTOT.ct, "key"="SW_MMSTOT")};
+SW_TMTA{->CREATE(TMTPfadfinderTeilA, "value"=SW_TMTA.ct, "key"="SW_TMTA")};
+SW_TMTB{->CREATE(TMTPfadfinderTeilB, "value"=SW_TMTB.ct, "key"="SW_TMTB")};
+SW_TMTBA{->CREATE(TMTPfadfinderTeilBdivA, "value"=SW_TMTBA.ct, "key"="SW_TMTBA")};
+SW_CERRL{->CREATE(WortlisteTotal, "value"=SW_CERRL.ct, "key"="SW_CERRL")};
+SW_CERRL1CT{->CREATE(Wortliste1 ,"value"=SW_CERRL1CT.ct, "key"="SW_CERRL1CT")};
+SW_CERRL2CT{->CREATE(Wortliste2 ,"value"=SW_CERRL2CT.ct, "key"="SW_CERRL2CT")};
+SW_CERRL3CT{->CREATE(Wortliste3 ,"value"=SW_CERRL3CT.ct, "key"="SW_CERRL3CT")};
+SW_CERWLSAV{->CREATE(SavingsWL ,"value"=SW_CERWLSAV.ct,"key"="SW_CERWLSAV")};
+SW_CERCPSAV{->CREATE(SavingsFIG ,"value"=SW_CERCPSAV.ct,"key"="SW_CERCPSAV")};
+SW_CERDISC{->CREATE(WortlisteDiskrim ,"value"=SW_CERDISC.ct, "key"="SW_CERDISC")};
+SW_PFSTOT{->CREATE(PhonFluessigkeit ,"value"=SW_PFSTOT.ct, "key"="SW_PFSTOT")};
+SW_CERDRLCT{->CREATE(WortlisteAbrufen ,"value"=SW_CERDRLCT.ct, "key"="SW_CERDRLCT")};
+SW_CERDRLIT{->CREATE(WortlisteIntrusionen ,"value"=SW_CERDRLIT.ct, "key"="SW_CERDRLIT")};
+SW_CERCP{->CREATE(FigurenAbzeichnen ,"value"=SW_CERCP.ct, "key"="SW_CERCP")};
+SW_CERCPR{->CREATE(FigurenAbrufen ,"value"=SW_CERCPR.ct, "key"="SW_CERCPR")};
+
+}
+
+//cleaning: delete annotations not needed anymore 
+BLOCK(Cleaning) Document{} { 
+UDATUM{->UNMARK(UDATUM)};
+
+Z_BNTTOT{->UNMARK(Z_BNTTOT)};
+Z_VFATOT{->UNMARK(Z_VFATOT)};
+Z_MMSTOT{->UNMARK(Z_MMSTOT)};
+Z_TMTA{->UNMARK(Z_TMTA)};
+Z_TMTB{->UNMARK(Z_TMTB)};
+Z_TMTBA{->UNMARK(Z_TMTBA)};
+Z_CERRL{->UNMARK(Z_CERRL)};
+Z_CERRL1CT{->UNMARK(Z_CERRL1CT)};
+Z_CERRL2CT{->UNMARK(Z_CERRL2CT)};
+Z_CERRL3CT{->UNMARK(Z_CERRL3CT)};
+Z_CERWLSAV{->UNMARK(Z_CERWLSAV)};
+Z_CERCPSAV{->UNMARK(Z_CERCPSAV)};
+Z_CERDISC{->UNMARK(Z_CERDISC)};
+Z_PFSTOT{->UNMARK(Z_PFSTOT)};
+Z_CERDRLCT{->UNMARK(Z_CERDRLCT)};
+Z_CERDRLIT{->UNMARK(Z_CERDRLIT)};
+Z_CERCP{->UNMARK(Z_CERCP)};
+Z_CERCPR{->UNMARK(Z_CERCPR)};
+
+SW_BNTTOT{->UNMARK(SW_BNTTOT)};
+SW_VFATOT{->UNMARK(SW_VFATOT)};
+SW_MMSTOT{->UNMARK(SW_MMSTOT)};
+SW_TMTA{->UNMARK(SW_TMTA)};
+SW_TMTB{->UNMARK(SW_TMTB)};
+SW_TMTBA{->UNMARK(SW_TMTBA)};
+SW_CERRL{->UNMARK(SW_CERRL)};
+SW_CERRL1CT{->UNMARK(SW_CERRL1CT)};
+SW_CERRL2CT{->UNMARK(SW_CERRL2CT)};
+SW_CERRL3CT{->UNMARK(SW_CERRL3CT)};
+SW_CERWLSAV{->UNMARK(SW_CERWLSAV)};
+SW_CERCPSAV{->UNMARK(SW_CERCPSAV)};
+SW_CERDISC{->UNMARK(SW_CERDISC)};
+SW_PFSTOT{->UNMARK(SW_PFSTOT)};
+SW_CERDRLCT{->UNMARK(SW_CERDRLCT)};
+SW_CERDRLIT{->UNMARK(SW_CERDRLIT)};
+SW_CERCP{->UNMARK(SW_CERCP)};
+SW_CERCPR{->UNMARK(SW_CERCPR)};
+
+RW_BNTTOT{->UNMARK(RW_BNTTOT)};
+RW_VFATOT{->UNMARK(RW_VFATOT)};
+RW_MMSTOT{->UNMARK(RW_MMSTOT)};
+RW_TMTA{->UNMARK(RW_TMTA)};
+RW_TMTB{->UNMARK(RW_TMTB)};
+RW_TMTBA{->UNMARK(RW_TMTBA)};
+RW_CERRL{->UNMARK(RW_CERRL)};
+RW_CERRL1CT{->UNMARK(RW_CERRL1CT)};
+RW_CERRL2CT{->UNMARK(RW_CERRL2CT)};
+RW_CERRL3CT{->UNMARK(RW_CERRL3CT)};
+RW_CERWLSAV{->UNMARK(RW_CERWLSAV)};
+RW_CERCPSAV{->UNMARK(RW_CERCPSAV)};
+RW_CERDISC{->UNMARK(RW_CERDISC)};
+RW_PFSTOT{->UNMARK(RW_PFSTOT)};
+RW_CERDRLCT{->UNMARK(RW_CERDRLCT)};
+RW_CERDRLIT{->UNMARK(RW_CERDRLIT)};
+RW_CERCP{->UNMARK(RW_CERCP)};
+RW_CERCPR{->UNMARK(RW_CERCPR)};
+
+
+Z_Unit {->UNMARK(Z_Unit)};
+RW_Unit {->UNMARK(RW_Unit)};
+SW_Unit {->UNMARK(SW_Unit)};
+SEK_Unit {->UNMARK(SEK_Unit)};
+ALL{->UNMARK(ALL)};
+}
+
