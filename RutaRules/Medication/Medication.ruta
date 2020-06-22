@@ -1,0 +1,204 @@
+// SETUP Variables
+DECLARE W, SPECIAL, COLON, ANY, CW, SW, PERIOD, CAP, QUESTION, NUM, PM;
+DECLARE Lemma, MHilfsannotation, Sentence, MUnit, MUnit1, MUnit2, DEADYLID, GLATC,GL;
+DECLARE CMDOSTOT, CMDOSU, CMFREQ, CMROUTE, CMDOSFRM, MNAME;
+DECLARE Unrecognized, Extraction;
+DECLARE CMENDAT, CMINDC, CMSTDAT, CMTRT, Header, MHENDAT, MHSTDAT, MHTERM;
+DECLARE MMedikation;
+DECLARE NormalizedNamedEntity, Concept;
+
+//Medication:
+//Annotate Annotations made by the RegexFinder
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"medication_dosage") -> MARK(CMDOSTOT)};
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"possible_medication_dosage") -> MARK(MUnit1)};
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"dosage_unit") -> MARK(CMDOSU)};
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"application_way") -> MARK(CMROUTE)};
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"application_form") -> MARK(CMDOSFRM)};
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"frequenz") -> MARK(CMFREQ)};
+
+//Include Dosage instruction that are put in parenthesis
+SPECIAL.ct=="(" CMDOSTOT{-> SHIFT(CMDOSTOT,1,3)} SPECIAL.ct==")";
+
+
+// Annotate annotations made by JProMiner
+// Create an Annotation based on the Source (GLATC: ATC CODE; GL: Yellow List ID) which is used to convey the information linked by JProMiner (Synonyms)
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"[A-Z0-9]{7}@ATC_DIMDI") -> MARK(MNAME)};
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"[A-Z0-9]{7}@ATC_DIMDI") -> CREATE(GLATC, "key" = NormalizedNamedEntity.concept.identifier)};
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"[\\d]{2,6}@GelbeListeWirkstoff") -> MARK(MHilfsannotation)};
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"[\\d]{2,6}@GelbeListeWirkstoff") -> CREATE(GL, "key" = NormalizedNamedEntity.concept.identifier)};
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"[\\d]{2,6}@GelbeListePraeparate") -> MARK(MHilfsannotation)};
+NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"[\\d]{2,6}@GelbeListePraeparate") -> CREATE(GL, "key" = NormalizedNamedEntity.concept.identifier)};
+
+//Cleaning some nested Annotations up
+CMDOSTOT{CONTAINS(MUnit1) -> UNMARK(MUnit1)};
+CMDOSU{CONTAINS(MUnit1) -> UNMARK(MUnit1)};
+
+// Remove possible double entries when both ATC and YL hit
+MNAME{CONTAINS(MHilfsannotation)->UNMARK(MHilfsannotation)};
+MHilfsannotation{-> MARK(MNAME)};
+MHilfsannotation{-> UNMARKALL(MHilfsannotation)};
+
+//Using the HA to search for combinations
+// deactivated due to the combination propably not having an ATC or YLID
+
+//Mark combinations as a single MNAME
+//Mark Med/Med/Med combinations as a single MNAME
+(MNAME SPECIAL.ct=="/" MNAME SPECIAL.ct=="/" MNAME) {-> MARK(MHilfsannotation,1,5)};
+MNAME{PARTOF(MHilfsannotation) -> UNMARK(MNAME),MARK(DEADYLID)};
+MHilfsannotation{-> MARK(MNAME)};
+MHilfsannotation{-> UNMARKALL(MHilfsannotation)};
+
+//Mark Med/Med combinations as a single MNAME
+(MNAME SPECIAL.ct=="/" MNAME) {-> MARK(MHilfsannotation,1,3)};
+MNAME{PARTOF(MHilfsannotation) -> UNMARK(MNAME),MARK(DEADYLID)};
+MHilfsannotation{-> MARK(MNAME)};
+MHilfsannotation{-> UNMARKALL(MHilfsannotation)};
+
+//Mark Med Med combinations as a single MNAME
+(MNAME MNAME) {-> MARK(MHilfsannotation,1,2)};
+MNAME{PARTOF(MHilfsannotation) -> UNMARK(MNAME),MARK(DEADYLID)};
+MHilfsannotation{-> MARK(MNAME)};
+MHilfsannotation{-> UNMARKALL(MHilfsannotation)};
+
+//Mark Med followed by a (XXX) as single MNAME
+(MNAME SPECIAL.ct=="(" ANY[1,2] SPECIAL.ct==")") {-> MARK(MHilfsannotation,1,4)};
+MNAME{PARTOF(MHilfsannotation) -> UNMARK(MNAME),MARK(DEADYLID)};
+MHilfsannotation{-> MARK(MNAME)};
+MHilfsannotation{-> UNMARKALL(MHilfsannotation)};
+
+//Identify MNAMES with comp/HEXXAL/etc.
+MNAME{->SHIFT(MNAME,1,2)} W{AND(-PARTOF(CMFREQ),-PARTOF(CMDOSTOT),-PARTOF(CMDOSU),-PARTOF(CMROUTE),-PARTOF(CMDOSFRM),-PARTOF(MNAME))} PERIOD? ANY{OR(PARTOF(CMFREQ),PARTOF(CMDOSTOT),PARTOF(CMDOSU),PARTOF(CMROUTE),PARTOF(CMDOSFRM))};
+MNAME{->SHIFT(MNAME,1,2)} W{AND(-PARTOF(CMFREQ),-PARTOF(CMDOSTOT),-PARTOF(CMDOSU),-PARTOF(CMROUTE),-PARTOF(CMDOSFRM),-PARTOF(MNAME),W.ct!="bei")} CMDOSU CMDOSTOT;
+MNAME{->SHIFT(MNAME,1,2)} ANY{AND(-PARTOF(CMFREQ),-PARTOF(CMDOSTOT),-PARTOF(CMDOSU),-PARTOF(CMROUTE),-PARTOF(CMDOSFRM),-PARTOF(MNAME))} PERIOD? ANY{OR(PARTOF(MNAME),PARTOF(CMFREQ),PARTOF(CMDOSTOT),PARTOF(CMDOSU),PARTOF(CMROUTE),PARTOF(CMDOSFRM))};
+MNAME{->SHIFT(MNAME,1,2)} NUM SPECIAL? NUM? ANY{OR(PARTOF(MNAME),PARTOF(CMFREQ),PARTOF(CMDOSTOT),PARTOF(CMDOSU),PARTOF(CMROUTE),PARTOF(CMDOSFRM))};
+
+//Notation of Medikamentenspiegel uses (Dosage Information) (Dosage instruction) (Name) (Dosage Information)
+CMDOSU CMDOSTOT MNAME{->SHIFT(MNAME,3,4)} CMDOSU PM?
+
+//Identify combination CMDOSU If a possible DOSU (see above) has a unit and/or has a combination 25mg/30mg, it is shifted
+(MUnit1 W{REGEXP("mg|g|µg|ml")}) {-> MARK(CMDOSU,1,2)};
+CMDOSU{-> SHIFT(CMDOSU,1,5)} SPECIAL.ct=="/" CMDOSU SPECIAL.ct=="/"? CMDOSU?;
+(MUnit1 CMDOSFRM) {-> MARK(CMDOSU,1)};
+
+//Identify Annotations that have no MNAME
+CW{AND(-PARTOF(MNAME),-PARTOF(CMFREQ),-PARTOF(CMDOSTOT),-PARTOF(CMDOSU))} SW? CMDOSU {-> MARK(Unrecognized,1,2)};
+CW{AND(-PARTOF(MNAME),-PARTOF(CMFREQ),-PARTOF(CMDOSTOT),-PARTOF(CMDOSU))} SW? CMFREQ {-> MARK(Unrecognized,1,2)};
+CW{AND(-PARTOF(MNAME),-PARTOF(CMFREQ),-PARTOF(CMDOSTOT),-PARTOF(CMDOSU))} SW? CMDOSTOT {-> MARK(Unrecognized,1,2)};
+CAP{AND(-PARTOF(MNAME),-PARTOF(CMFREQ),-PARTOF(CMDOSTOT),-PARTOF(CMDOSU))} SW? CMDOSU {-> MARK(Unrecognized,1,2)};
+CAP{AND(-PARTOF(MNAME),-PARTOF(CMDOSTOT),-PARTOF(CMDOSU),-PARTOF(CMFREQ))} SW? CMFREQ {-> MARK(Unrecognized,1,2)};
+CAP{AND(-PARTOF(MNAME),-PARTOF(CMFREQ),-PARTOF(CMDOSU),-PARTOF(CMDOSTOT))} SW? CMDOSTOT {-> MARK(Unrecognized,1,2)};
+(CMDOSU CW{AND(-PARTOF(MNAME),-PARTOF(CMFREQ),-PARTOF(CMDOSTOT),-PARTOF(CMDOSFRM),-PARTOF(CMROUTE))}){-> MARK(Unrecognized,2,2)};
+
+//Create Extraction Annotations to show not yet recognized texts that seem to be Medication information
+(CMDOSU CW{AND(-CONTAINS(MNAME),-CONTAINS(CMFREQ),-CONTAINS(CMDOSTOT),-CONTAINS(CMDOSFRM),-CONTAINS(CMROUTE))}){-> MARK(Unrecognized,2,2)};
+
+Unrecognized{->SHIFT(Unrecognized,1,4),CREATE(Extraction, "key" = "Unrecognized", "value"=Unrecognized.ct),UNMARK(Unrecognized)} CMDOSU CMFREQ? CMDOSTOT;
+Unrecognized{->SHIFT(Unrecognized,1,4),CREATE(Extraction, "key" = "Unrecognized", "value"=Unrecognized.ct),UNMARK(Unrecognized)} CMDOSU CMDOSTOT CMFREQ;
+CMDOSU CMDOSFRM? Unrecognized{->SHIFT(Unrecognized,1,4),CREATE(Extraction, "key" = "Unrecognized", "value"=Unrecognized.ct),UNMARK(Unrecognized)} CMFREQ;
+Unrecognized{->SHIFT(Unrecognized,1,4),CREATE(Extraction, "key" = "Unrecognized", "value"=Unrecognized.ct),UNMARK(Unrecognized)} CMDOSU ANY[0,2]? CMDOSFRM;
+Unrecognized{->SHIFT(Unrecognized,1,3),CREATE(Extraction, "key" = "Unrecognized", "value"=Unrecognized.ct),UNMARK(Unrecognized)} CMDOSU CMROUTE;
+Unrecognized{->SHIFT(Unrecognized,1,3),CREATE(Extraction, "key" = "Unrecognized", "value"=Unrecognized.ct),UNMARK(Unrecognized)} CMDOSU CMFREQ;
+Unrecognized{->SHIFT(Unrecognized,1,3),CREATE(Extraction, "key" = "Unrecognized", "value"=Unrecognized.ct),UNMARK(Unrecognized)} CMFREQ CMDOSU;
+Unrecognized{->SHIFT(Unrecognized,1,2),CREATE(Extraction, "key" = "Unrecognized", "value"=Unrecognized.ct),UNMARK(Unrecognized)} CMDOSU;
+Unrecognized{->SHIFT(Unrecognized,1,2),CREATE(Extraction, "key" = "Unrecognized", "value"=Unrecognized.ct),UNMARK(Unrecognized)} CMDOSTOT;
+Unrecognized{->SHIFT(Unrecognized,1,2),CREATE(Extraction, "key" = "Unrecognized", "value"=Unrecognized.ct),UNMARK(Unrecognized)} CMFREQ;
+CMDOSU Unrecognized {->SHIFT(Unrecognized,1,2),CREATE(Extraction, "key" = "Unrecognized", "value"=Unrecognized.ct),UNMARK(Unrecognized)};
+CMFREQ Unrecognized {->SHIFT(Unrecognized,1,2),CREATE(Extraction, "key" = "Unrecognized", "value"=Unrecognized.ct),UNMARK(Unrecognized)};
+
+//Remove all MNAMES that do not have a GL or GLATC (should not be possible, just making sure)
+MNAME{AND(-CONTAINS(GL),-CONTAINS(GLATC)) -> UNMARK(MNAME)};
+MNAME{AND(-PARTOF(GL),-PARTOF(GLATC)) -> UNMARK(MNAME)};
+
+//Create all Medication combinations known
+//Remove the MNAME after a single rule has found something, so that other rules won't find it again
+//Order is from special rules to more coarse rules until in the end anything that is paired with an MNAME or an MNAME alone can match
+//DEADYLID is for Debugging, might be removed in final version
+STRING temp;
+
+// (Name) (Dosage Unit) (Frequency) (Dosage Information)
+(MNAME CMDOSU CMFREQ CMDOSTOT){-> CREATE(MMedikation, "CMDOSU" = CMDOSU, "CMDOSTOT" = CMDOSTOT, "MNAME" = MNAME, "CMFREQ" = CMFREQ)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Name) (Dosage Unit) (Dosage Information) (Frequency)
+(MNAME CMDOSU CMDOSTOT CMFREQ){-> CREATE(MMedikation, "CMDOSU" = CMDOSU, "CMDOSTOT" = CMDOSTOT, "MNAME" = MNAME, "CMFREQ" = CMFREQ)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Name) (Dosage Unit) (Dosage Information)
+(MNAME CMDOSU CMDOSTOT){-> CREATE(MMedikation, "CMDOSU" = CMDOSU, "CMDOSTOT" = CMDOSTOT, "MNAME" = MNAME)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Dosage Unit) (Dosage form)? (Name) (Frequency)
+(CMDOSU CMDOSFRM? MNAME CMFREQ) {-> CREATE(MMedikation,"CMDOSU"=CMDOSU,"CMDOSFRM"=CMDOSFRM,"MNAME"=MNAME,"CMFREQ"=CMFREQ)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Dosage Unit) (Dosage Information) (Name)
+(CMDOSU CMDOSTOT MNAME) {-> CREATE(MMedikation,"CMDOSU"=CMDOSU,"CMDOSTOT"=CMDOSTOT,"MNAME"=MNAME)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Name) (Dosage Unit) (1 to 2 Words)? (Dosage form)
+(MNAME CMDOSU ANY[0,2]? CMDOSFRM){-> CREATE(MMedikation, "CMDOSU" = CMDOSU, "CMDOSFRM" = CMDOSFRM, "MNAME" = MNAME)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Name) (Dosage Unit) (Dosage route)
+(MNAME CMDOSU CMROUTE){-> CREATE(MMedikation, "CMDOSU" = CMDOSU, "CMROUTE" = CMROUTE, "MNAME" = MNAME)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Name) (Dosage Unit) (Frequency)
+(MNAME CMDOSU CMFREQ){-> CREATE(MMedikation, "CMDOSU" = CMDOSU, "CMFREQ" = CMFREQ, "MNAME" = MNAME)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Name) (Frequency) (Dosage unit)
+(MNAME CMFREQ CMDOSU){-> CREATE(MMedikation, "CMDOSU" = CMDOSU, "CMFREQ" = CMFREQ, "MNAME" = MNAME)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Name) (Dosage unit)
+(MNAME CMDOSU){-> CREATE(MMedikation, "CMDOSU" = CMDOSU, "MNAME" = MNAME)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Dosage unit) (Name)
+(CMDOSU MNAME){-> CREATE(MMedikation, "CMDOSU" = CMDOSU, "MNAME" = MNAME)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Name) (Dosage Information)
+(MNAME CMDOSTOT){-> CREATE(MMedikation, "CMDOSTOT" = CMDOSTOT, "MNAME" = MNAME)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Name) (Frequency)
+(MNAME CMFREQ){-> CREATE(MMedikation, "CMFREQ" = CMFREQ, "MNAME" = MNAME)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Frequency) (Name)
+(CMFREQ MNAME){-> CREATE(MMedikation, "CMFREQ" = CMFREQ, "MNAME" = MNAME)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// (Name)
+(MNAME) {-> CREATE(MMedikation, "MNAME" = MNAME)};
+MMedikation{CONTAINS(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+MMedikation{PARTOF(MNAME)} -> {MNAME {-> UNMARK(MNAME),MARK(DEADYLID)};};
+
+// Add the GL/GLATC Information to all annotations
+MMedikation{CONTAINS(GLATC) -> SETFEATURE("ATC", temp)} <- {GLATC{ -> GETFEATURE("key", temp)};};
+MMedikation{CONTAINS(GL) -> SETFEATURE("YLID", temp)} <- {GL{ -> GETFEATURE("key", temp)};};
+MMedikation{PARTOF(GLATC) -> SETFEATURE("ATC", temp)} <- {GLATC{ -> GETFEATURE("key", temp)};};
+MMedikation{PARTOF(GL) -> SETFEATURE("YLID", temp)} <- {GL{ -> GETFEATURE("key", temp)};};
+
+// Remove every medication where this didn't work out 
+// (since every MName which hasn't had a GL/GLATC should be showing up in the failed extraction section, nothing should be deleted here)
+MMedikation{-OR(PARTOF(GLATC),PARTOF(GL)) -> UNMARK(MMedikation)};
+MMedikation{-OR(CONTAINS(GLATC),CONTAINS(GL)) -> UNMARK(MMedikation)};
+
+//MNAME{-> UNMARKALL(MNAME)};
