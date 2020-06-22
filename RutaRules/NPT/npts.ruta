@@ -8,7 +8,7 @@ DECLARE RW_BNTTOT, RW_VFATOT, RW_MMSTOT, RW_TMTA, RW_TMTB, RW_TMTBA, RW_CERRL, R
 DECLARE Untersuchungsdatum;
 DECLARE UDATUM;
 
-// Annotate Boston Naming Test, Verbale FlÃ¼ssigkeit, TMT etc.
+// Annotate Boston Naming Test, Verbale Flüssigkeit, TMT etc.
 
 
 BLOCK(NDDScales) Document{} {
@@ -488,7 +488,6 @@ RW_CERDRLCT{->UNMARK(RW_CERDRLCT)};
 RW_CERDRLIT{->UNMARK(RW_CERDRLIT)};
 RW_CERCP{->UNMARK(RW_CERCP)};
 RW_CERCPR{->UNMARK(RW_CERCPR)};
-
 
 Z_Unit {->UNMARK(Z_Unit)};
 RW_Unit {->UNMARK(RW_Unit)};
