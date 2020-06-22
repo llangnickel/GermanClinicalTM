@@ -4,7 +4,7 @@ DECLARE Sentence, W, CW, SW, COMMA, ANY, PERIOD, NUM, SPECIAL;
 DECLARE Lemma;
 DECLARE AD,SCD,MCI,LBD,PCA,FTD,PPA,LE,NPH,VD,OAS;
 //Alzheimers Disease, Subjective cognitive decline, mild cognitive impairement, lewy body dementia, posterior cortical atrophy, fronto temporal dementia,
-//PrimÃ¤r progressive Ahasie, limbische Enzephalitis, Dementielles Syndrom bei Normaldruckhydrozephalus, vaskulÃ¤re Demenz, organisches amnestisches Syndrom
+//Primär progressive Ahasie, limbische Enzephalitis, Dementielles Syndrom bei Normaldruckhydrozephalus, vaskuläre Demenz, organisches amnestisches Syndrom
 DECLARE timepoint, DiagnoseAll, atypisch, ICD10, MESH;
 DECLARE NormalizedNamedEntity, Concept;
 
@@ -24,11 +24,11 @@ AD{->SETFEATURE("key","AD")};
 
 //SCD 
 
-W{REGEXP("subjektive|Subjektive|subjective|Subjective")} ANY?? W{REGEXP("kognitive|kognitiv|cognitive")} Lemma{contains(Lemma.wordLemma,"stÃ¶rung")  -> MARK(SCD, 1,4)};    
-W{REGEXP("subjektive|Subjektive|subjective|Subjective")} ANY?? W{REGEXP("kognitive|kognitiv|cognitive")} Lemma{contains(Lemma.wordLemma,"einschrÃ¤nkung")  -> MARK(SCD, 1,4)};
-W{REGEXP("subjektive|Subjektive|subjective|Subjective")} ANY?? W{REGEXP("kognitive|kognitiv|cognitive")} Lemma{contains(Lemma.wordLemma,"beeintrÃ¤chtigung")  -> MARK(SCD, 1,4)};
-W{REGEXP("subjektive|Subjektive|subjective|Subjective")} Lemma{contains(Lemma.wordLemma,"beeintrÃ¤chtigung")  -> MARK(SCD, 1,2)};
-W{REGEXP("subjektive|Subjektive|subjective|Subjective")} Lemma{contains(Lemma.wordLemma,"stÃ¶rung")  -> MARK(SCD, 1,2)};
+W{REGEXP("subjektive|Subjektive|subjective|Subjective")} ANY?? W{REGEXP("kognitive|kognitiv|cognitive")} Lemma{contains(Lemma.wordLemma,"störung")  -> MARK(SCD, 1,4)};    
+W{REGEXP("subjektive|Subjektive|subjective|Subjective")} ANY?? W{REGEXP("kognitive|kognitiv|cognitive")} Lemma{contains(Lemma.wordLemma,"einschränkung")  -> MARK(SCD, 1,4)};
+W{REGEXP("subjektive|Subjektive|subjective|Subjective")} ANY?? W{REGEXP("kognitive|kognitiv|cognitive")} Lemma{contains(Lemma.wordLemma,"beeinträchtigung")  -> MARK(SCD, 1,4)};
+W{REGEXP("subjektive|Subjektive|subjective|Subjective")} Lemma{contains(Lemma.wordLemma,"beeinträchtigung")  -> MARK(SCD, 1,2)};
+W{REGEXP("subjektive|Subjektive|subjective|Subjective")} Lemma{contains(Lemma.wordLemma,"störung")  -> MARK(SCD, 1,2)};
 W{REGEXP("subjektive|Subjektive|subjective|Subjective")} ANY?? W{REGEXP("kognitive|kognitiv|cognitive")} Lemma{REGEXP(Lemma.wordLemma,"beschwerde|defizit|decline")  -> MARK(SCD, 1,4)};
 WORDLIST SCDList = 'config/SCD.txt';
   Document {-> MARKFAST(SCD, SCDList, true, 3) };
@@ -38,7 +38,7 @@ SCD{->SETFEATURE("key","SCD")};
 //MCI
 
 W.ct=="MCI" {-> CREATE (MCI)};
-Lemma{REGEXP(Lemma.wordLemma, "mild|leicht")} Lemma{REGEXP(Lemma.wordLemma, "kognitiv|cognitive")} Lemma{REGEXP(Lemma.wordLemma,"stÃ¶rung|beeintrÃ¤chtigung|defizit|einschrÃ¤nkung|impairement|impariment")} SPECIAL? W.ct=="MCI"? SPECIAL? {  -> MARK(MCI, 1,6)}; 
+Lemma{REGEXP(Lemma.wordLemma, "mild|leicht")} Lemma{REGEXP(Lemma.wordLemma, "kognitiv|cognitive")} Lemma{REGEXP(Lemma.wordLemma,"störung|beeinträchtigung|defizit|einschränkung|impairement|impariment")} SPECIAL? W.ct=="MCI"? SPECIAL? {  -> MARK(MCI, 1,6)}; 
 MCI{->SETFEATURE("key","MCI")};
 
 
@@ -77,7 +77,7 @@ NPH{->SETFEATURE("key","NPH")};
 
 
 //VD
-W{REGEXP("vaskulÃ¤re|VaskulÃ¤re")}  W{REGEXP("Demenz") -> MARK(VD, 1,2)};
+W{REGEXP("vaskuläre|Vaskuläre")}  W{REGEXP("Demenz") -> MARK(VD, 1,2)};
 W.ct=="VD" {->MARK(VD)};
 VD{->SETFEATURE("key","VD")};
 
@@ -88,7 +88,7 @@ OAS{->SETFEATURE("key","OAS")};
 
 
 //timepoint
-W.ct=="mit" W{REGEXP("frÃ¼hem|spÃ¤tem")} W{REGEXP("Beginn|Erkrankungsbeginn") -> MARK(timepoint,1,3)};
+W.ct=="mit" W{REGEXP("frühem|spätem")} W{REGEXP("Beginn|Erkrankungsbeginn") -> MARK(timepoint,1,3)};
 
 
 //atypisch / atypical
