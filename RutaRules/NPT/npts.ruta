@@ -1,3 +1,4 @@
+//Declaration of Variables
 DECLARE CAP, SEMICOLON, W, COLON, SPECIAL, PERIOD, CW, SW, ANY, ALL;
 DECLARE Table, Z_Unit, SW_Unit, RW_Unit, SEK_Unit;
 DECLARE CognitiveTest, BostonNamingTest,VerbFluessigkeit, MMST, TMTPfadfinderTeilA, TMTPfadfinderTeilB, TMTPfadfinderTeilBdivA, WortlisteTotal, Wortliste1, Wortliste2, Wortliste3, SavingsWL, SavingsFIG, PhonFluessigkeit, WortlisteIntrusionen, WortlisteAbrufen, WortlisteDiskrim, FigurenAbrufen, FigurenAbzeichnen; 
@@ -7,29 +8,35 @@ DECLARE RW_BNTTOT, RW_VFATOT, RW_MMSTOT, RW_TMTA, RW_TMTB, RW_TMTBA, RW_CERRL, R
 DECLARE Untersuchungsdatum;
 DECLARE UDATUM;
 
-// annotate Boston Naming Test, Verbale Flüssigkeit, TMT etc. 
+// Annotate Boston Naming Test, Verbale FlÃ¼ssigkeit, TMT etc.
 
 
 BLOCK(NDDScales) Document{} {
-
+    // Annotate Date of document
     CW{REGEXP("Testdatum") -> MARK(Untersuchungsdatum, 1, 1)};
     CW{REGEXP("Datum")} W W.ct=="Testuntersuchung" {-> MARK(Untersuchungsdatum, 1, 3)};
     Untersuchungsdatum ANY[0,6]? Untersuchungsdatum {-> UNMARK(Untersuchungsdatum, 1)};
-
+    
+    // Boston Naming Test
     CW{REGEXP("Boston")} W W {-> MARK(BostonNamingTest, 1,3)};
     CW{REGEXP("Von")} NUM W.ct=="Bildern" W W W W {-> MARK(BostonNamingTest, 1,3)};
     BostonNamingTest ANY[0,6]? BostonNamingTest {-> UNMARK(BostonNamingTest, 1)};
-
+    
+    // Word List
     W{REGEXP("Wortliste")} SPECIAL W.ct=="Verbales" W SPECIAL {-> MARK(WortlisteTotal, 1,5)};
     W{REGEXP("Summe")} W NUM W SPECIAL.ct=="(" W PERIOD NUM SPECIAL.ct==")" {-> MARK(WortlisteTotal, 1, 4)};
     WortlisteTotal ANY[0,12]? WortlisteTotal {-> UNMARK(WortlisteTotal, 1)};
-
+    
+    // First learning round
     W{REGEXP("Nach")} W W.ct == "ersten" W.ct == "Lerndurchgang" {-> MARK(Wortliste1, 1, 4)};
-
+    
+    // Second learning round
     W{REGEXP("Nach")} W W.ct == "zweiten" W.ct == "Lerndurchgang" {-> MARK(Wortliste2, 1, 4)};
-
+    
+    // Third learning round
     W{REGEXP("Unmittelbar")} W W W.ct == "dritten" W.ct == "Lerndurchgang" {-> MARK(Wortliste3, 1, 5)};
-
+    
+    //Verbal fluency
     CW{REGEXP("Verb|Verbale")} PERIOD? W SW{REGEXP("kateg|kategorial")} PERIOD? {-> MARK (VerbFluessigkeit, 1, 5)};
     CW{REGEXP("Genannte")} W.ct=="Worte" SPECIAL? W{REGEXP("Kategorie|Anfangsbuchstabe")} SPECIAL? W SPECIAL? COMMA? NUM? W PERIOD? SPECIAL? {-> MARK (VerbFluessigkeit, 1, 2)};
     VerbFluessigkeit ANY[0,12]? VerbFluessigkeit {-> UNMARK(VerbFluessigkeit, 1)};
@@ -37,10 +44,13 @@ BLOCK(NDDScales) Document{} {
     CW{REGEXP("Verb|Verbale")} PERIOD? W SW{REGEXP("phon|phone|phonematisch")} PERIOD? {-> MARK(PhonFluessigkeit, 1,5)};
     PhonFluessigkeit ANY[0,12]? VerbFluessigkeit {-> UNMARK(VerbFluessigkeit)};
 
+    // Recall of memoriszed words
     CW{REGEXP("Abrufen")} W W {-> MARK(WortlisteAbrufen, 1,3)};
-
+    
+    // Instrusions
     CW{REGEXP("Intrusionen")} W? {-> MARK(WortlisteIntrusionen, 1,1)};
 
+    // Saving
     CW{REGEXP("Savings")} W.ct=="Wortliste" SPECIAL.ct=="("? W? W? SPECIAL.ct==")"? {-> MARK(SavingsWL, 1,6)};
     CW{REGEXP("Savings")} SPECIAL.ct=="(" W W SPECIAL.ct==")" {-> MARK(SavingsWL, 1, 5)};
     SavingsWL ANY[0,6]? SavingsWL {-> UNMARK(SavingsWL, 1)};
@@ -49,24 +59,29 @@ BLOCK(NDDScales) Document{} {
     
     SavingsWL{CONTAINS(SavingsFIG)} -> {SavingsFIG {-> UNMARK(SavingsFIG)};};
 
+    // Discriminality
     W{REGEXP("Diskriminabilit(.)t")} SPECIAL.ct == "("? W? W? SPECIAL.ct == ")"? {-> MARK(WortlisteDiskrim, 1,1)};    
 
+    // Drawing
     CW{REGEXP("Direktes")} W.ct == "Abzeichnen" {-> MARK(FigurenAbzeichnen, 1,2)};
 
+    // Recall
     W{REGEXP("Verz(.)gerte")} W.ct == "Wiedergabe" {-> MARK(FigurenAbrufen, 1,2)};
 
+    // Mini Mental Test
     CW{REGEXP("Mini")} SPECIAL.ct == "-" W SPECIAL.ct == "-" W W {-> MARK(MMST, 1, 6)};
     CW{REGEXP("Gesamtpunkte")} SPECIAL.ct=="(" W PERIOD NUM SPECIAL.ct==")" {-> MARK(MMST, 1, 6)};
     MMST ANY[0,6]? MMST {-> UNMARK(MMST,1)};
-      
+    
+    // Trail Making Test A
     W{REGEXP("Teil")} W.ct == "A" {-> MARK(TMTPfadfinderTeilA, 1, 2)};
-
+    // Trail Making Test B
     W{REGEXP("Teil")} W.ct == "B" {-> MARK(TMTPfadfinderTeilB, 1, 2)};
 
     //annotate TMTPfadfinderTeilBdivA with help of TMTA and TMTB
     Table {}-> {TMTPfadfinderTeilB SPECIAL.ct == "/" W.ct== "A" {-> MARK(TMTPfadfinderTeilBdivA, 1, 3)}; };
 
-        //delete TMTA and TMTB within TMTB/A
+    //delete TMTA and TMTB within TMTB/A
     TMTPfadfinderTeilBdivA{CONTAINS(TMTPfadfinderTeilB)} -> {TMTPfadfinderTeilB{-> UNMARK(TMTPfadfinderTeilB)};};
     TMTPfadfinderTeilBdivA{CONTAINS(TMTPfadfinderTeilA)} -> {TMTPfadfinderTeilA{-> UNMARK(TMTPfadfinderTeilA)};};
     
@@ -83,7 +98,7 @@ Table {}-> {SEMICOLON W{REGEXP("SW") -> SW_Unit} COLON SEMICOLON;};
 Table {}-> {SEMICOLON W{REGEXP("Sek")-> SEK_Unit} PERIOD? COLON SEMICOLON;};
 }
 
-// annotate corresponding Z value for Boston Naming Test etc
+// annotate corresponding Z value for Boston Naming Test etc. 
 BLOCK(Value) Document{} {
 Table {}-> {Untersuchungsdatum COLON SEMICOLON NUM PERIOD NUM PERIOD NUM SEMICOLON 
     {-> MARK(UDATUM, 4,8)};
@@ -166,7 +181,7 @@ Table {}-> {FigurenAbrufen ANY[1,22]? Z_Unit COLON SEMICOLON SPECIAL.ct == "<"? 
     {-> MARK(Z_CERCPR, 6, 12)};   
     };
 
-//RW Werte mit RW_Unit
+//Raw Values (RW)
 
 Table {}-> {BostonNamingTest ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "-"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
     {-> MARK(RW_BNTTOT, 6, 11)};
@@ -247,8 +262,8 @@ Table {}-> {FigurenAbzeichnen ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "
 Table {}-> {FigurenAbrufen ANY[1,22]? RW_Unit COLON SEMICOLON SPECIAL.ct == "<"? SPECIAL.ct == "-"? NUM  NUM? COMMA? PERIOD? NUM? SEMICOLON 
     {-> MARK(RW_CERCPR, 6, 12)};   
     };
-	
-//SW Werte mit SW_Unit
+    
+// Standard Units (SW)
 Table {}-> {BostonNamingTest ANY[1,22]? SW_Unit COLON SEMICOLON SPECIAL.ct == "-"? NUM NUM? COMMA? PERIOD? NUM? SEMICOLON 
     {-> MARK(SW_BNTTOT, 6, 11)};
  };
@@ -481,4 +496,3 @@ SW_Unit {->UNMARK(SW_Unit)};
 SEK_Unit {->UNMARK(SEK_Unit)};
 ALL{->UNMARK(ALL)};
 }
-
