@@ -5,7 +5,7 @@ Because of a limited training data availability, the pipelines follow a rule-bas
 Due to data privacy, we can unfortunately not publish our data.  
 
 ## Pipeline overview 
-![](workflow.png)
+![](img/workflow.png)
 
 
 
