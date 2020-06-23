@@ -1,0 +1,14 @@
+{ 
+"task": {
+  "jobid": "",
+  "Anamnese": "",
+  "Diagnose":  "",
+  "Epikrise": "",
+  "Medikation": "",
+  "MiniMental": "",
+  "Freitext": "",
+  "Untersuchungsbefund":  "",
+  "Others": "",
+  "MEDDATE" : ""
+   }
+}

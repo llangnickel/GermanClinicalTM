@@ -1,0 +1,3 @@
+This is a simple test document.
+Anamnesis: Herr Müller leidet unter Wortfindungsstörungen. 
+Diagnosis: Er hat Demenz vom Typ Alzheimer. 
