@@ -91,7 +91,6 @@ echo Running $NAME
 THREADS=1
 REQUIRED_MEMORY_PER_THREAD=1966080
 REQUIRED_MEMORY=`expr $REQUIRED_MEMORY_PER_THREAD \* $THREADS`
-MODEL="arzt"
 IN2=$OUT1
 OUT2=$OUTDIR/$NAME"_"$MODEL"_"$TIMESTAMP
 LOG_FILE=$LOGDIR"/"$NAME"_"$MODEL"_"$TIMESTAMP".log"
@@ -111,7 +110,7 @@ java -Xmx${REQUIRED_MEMORY}k $MICRO_JAVA_OPTS \
      -casPoolSize 1 \
      -actionOnMaxError continue \
      --dropCasOnException true \
-     -c ${CONFIG_HOME}/${NAME}-${MODEL}.ini \
+     -c ${CONFIG_HOME}/${NAME}.ini \
       FILE \
      -fs USERSUPPLIEDID \
      -i $IN2 \
@@ -144,7 +143,6 @@ echo Running $NAME
 THREADS=1
 REQUIRED_MEMORY_PER_THREAD=1966080
 REQUIRED_MEMORY=`expr $REQUIRED_MEMORY_PER_THREAD \* $THREADS`
-MODEL="arzt-neu"
 IN4=$OUT2
 OUT4=$OUTDIR/$NAME"_"$MODEL"_"$TIMESTAMP
 LOG_FILE=$LOGDIR"/"$NAME"_"$MODEL"_"$TIMESTAMP".log"
@@ -164,7 +162,7 @@ java -Xmx${REQUIRED_MEMORY}k $MICRO_JAVA_OPTS \
      -t $THREADS \
      -log "ALL" \
      -casPoolSize 1 \
-     -c ${CONFIG_HOME}/${NAME}-${MODEL}.ini \
+     -c ${CONFIG_HOME}/${NAME}.ini \
       FILE \
      -fs USERSUPPLIEDID \
      -i $IN4 \
