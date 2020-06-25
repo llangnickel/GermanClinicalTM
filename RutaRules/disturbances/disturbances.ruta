@@ -152,77 +152,7 @@ Sentence{AND(CONTAINS(Sonstige), CONTAINS(Beginn_A))} -> {Beginn_A{-> CREATE(ACO
 Sentence{AND(CONTAINS(PlanenOrdnen), CONTAINS(Beginn_A))} -> {Beginn_A{-> CREATE(ACPLNONSET_A,"key"="ACPLNONSET_A", "value"=Beginn_A.ct)};};
 
 
-//Fremd und Eigen / extrinsic and intrinsic anamnesis 
-//This is currently not used as interannotator agreement for the detection of the reporter results in bad scores
-
-//NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"family_member") -> MARK(Fremd)};
-//Lemma{REGEXP(Lemma.wordLemma,"ehemann|ehefrau|sohn|tochter|schwiegersohn|schwiegertochter|angehörige|
-//    |familie|informant|fremdanamnestisch|kollege|enkelsohn|familienangehöriger|freundin") -> MARK(Fremd)};
-
-//Lemma{REGEXP(Lemma.wordLemma,"eigenanamnestisch|subjektiv|selbsteinschätzung") -> MARK(Eigen)};
-//Lemma{REGEXP(Lemma.wordLemma,"herr|frau")} Lemma{contains(Lemma.wordLemma,"xxx")} SW.ct=="selber"? Lemma{contains(Lemma.wordLemma,"berichten") -> MARK(Eigen, 1, 4)};
-//Lemma{REGEXP(Lemma.wordLemma,"er|sie")} SW.ct=="selber" { -> MARK(Eigen, 1, 2)};
-//Lemma{REGEXP(Lemma.wordLemma,"patient|patientin")} Lemma{REGEXP(Lemma.wordLemma,"berichten|äußern|schildern") -> MARK(Eigen, 1)};
-//Lemma{REGEXP(Lemma.wordLemma,"patient|patientin")} Lemma{REGEXP(Lemma.wordLemma,"geben")} W.ct=="an" {-> MARK(Eigen, 1)};
-//Lemma{REGEXP(Lemma.wordLemma,"fallen|äußern")} Lemma{REGEXP(Lemma.wordLemma,"herr|frau")} Lemma{contains(Lemma.wordLemma,"xxx") -> MARK(Eigen, 2, 3)};
-//Lemma{REGEXP(Lemma.wordLemma,"patient|patientin")} Lemma{REGEXP(Lemma.wordLemma,"selbst|selber") -> MARK(Eigen, 1)};
-//SW.ct=="von" SW? Lemma{REGEXP(Lemma.wordLemma,"patient|patientin") -> MARK(Eigen, 1,3)};
-
-//if sentence contains both extrinsic and intrinsic, unmark intrinsic 
-//Sentence{AND(CONTAINS(Eigen), CONTAINS(Fremd))} -> {Eigen {-> UNMARK(Eigen)};};
-//exception to this rule: 
-//Lemma{REGEXP(Lemma.wordLemma,"herr|frau")} Lemma{contains(Lemma.wordLemma,"xxx")} W[1,4]? Fremd Lemma{contains(Lemma.wordLemma,"berichten") -> MARK(Eigen, 1, 2)};
-
-
-// If it is mentioned, that the patient shows up alone, swap all keys to instrinsic
-//W.ct=="ohne" W.ct=="Begleitung" {->MARK(ohneBeg, 1,2)};
-//W.ct=="in" W.ct=="Begleitung" ANY?? Fremd {->MARK(mitBeg,1,4)};
-//W.ct=="im" W.ct=="Beisein" ANY?? Fremd {->MARK(mitBeg,1,4)};
-
-
-//Document{CONTAINS(ohneBeg)} -> {Gedaechtnis{->SETFEATURE("key", "AC12MEM")};};
-//Document{CONTAINS(ohneBeg)} -> {Konzentration{->SETFEATURE("key", "AC12ATT")};};
-//Document{CONTAINS(ohneBeg)} -> {Sonstige{->SETFEATURE("key", "AC12OTH")};};
-//Document{CONTAINS(ohneBeg)} -> {PlanenOrdnen{->SETFEATURE("key", "AC12PLN")};};
-//Document{CONTAINS(ohneBeg)} -> {Wortfindung{->SETFEATURE("key", "AC12LNG")};};
-
-//Document{-CONTAINS(mitBeg)} -> {Gedaechtnis{->SETFEATURE("key", "AC12MEM")};};
-//Document{-CONTAINS(mitBeg)} -> {Konzentration{->SETFEATURE("key", "AC12ATT")};};
-//Document{-CONTAINS(mitBeg)} -> {Sonstige{->SETFEATURE("key", "AC12OTH")};};
-//Document{-CONTAINS(mitBeg)} -> {PlanenOrdnen{->SETFEATURE("key", "AC12PLN")};};
-//Document{-CONTAINS(mitBeg)} -> {Wortfindung{->SETFEATURE("key", "AC12LNG")};};
-
-
-// Swap the Key if intrinsic or extrinsic is mentioned in one sentence
-
-//Sentence{AND(CONTAINS(Gedaechtnis), CONTAINS(Fremd))} -> {Gedaechtnis{-> SETFEATURE("key", "AC2MEM")};};
-//Sentence{AND(CONTAINS(Konzentration), CONTAINS(Fremd))} -> {Konzentration{-> SETFEATURE("key", "AC2ATT")};};
-//Sentence{AND(CONTAINS(Sonstige), CONTAINS(Fremd))} -> {Sonstige{-> SETFEATURE("key", "AC2OTH")};};
-//Sentence{AND(CONTAINS(PlanenOrdnen), CONTAINS(Fremd))} -> {PlanenOrdnen{-> SETFEATURE("key", "AC2PLN")};};
-//Sentence{AND(CONTAINS(Wortfindung), CONTAINS(Fremd))} -> {Wortfindung{-> SETFEATURE("key", "AC2LNG")};};
-
-//Sentence{AND(CONTAINS(Gedaechtnis), CONTAINS(Eigen))} -> {Gedaechtnis{-> SETFEATURE("key", "AC12MEM")};};
-//Sentence{AND(CONTAINS(Konzentration), CONTAINS(Eigen))} -> {Konzentration{-> SETFEATURE("key", "AC12ATT")};};
-//Sentence{AND(CONTAINS(Sonstige), CONTAINS(Eigen))} -> {Sonstige{-> SETFEATURE("key", "AC12OTH")};};
-//Sentence{AND(CONTAINS(PlanenOrdnen), CONTAINS(Eigen))} -> {PlanenOrdnen{-> SETFEATURE("key", "AC12PLN")};};
-//Sentence{AND(CONTAINS(Wortfindung), CONTAINS(Eigen))} -> {Wortfindung{-> SETFEATURE("key", "AC12LNG")};};
-
-
-// Begin -> currently not relevant
-
-NormalizedNamedEntity{REGEXP(NormalizedNamedEntity.concept.identifier,"year_date") -> MARK(Beginn)};
-Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? NUM  Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 4, 5)};
-Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? PERIOD? Lemma{REGEXP(Lemma.wordLemma,"ein|eineinhalb|dreiviertel|mehrere")}  Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 4, 5)};
-Lemma{REGEXP(Lemma.wordLemma,"seit|vor")} SW? SW? Lemma{REGEXP(Lemma.wordLemma,"ein|eineinhalb|dreiviertel|mehrere")}  Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 4, 5)};
-Lemma{REGEXP(Lemma.wordLemma,"seit")} SW? NUM  Lemma{contains(Lemma.wordLemma,"jahr") -> MARK(Beginn, 3, 4)};
-Lemma{REGEXP(Lemma.wordLemma,"seit")} NUM  {-> MARK(Beginn, 2)};
-Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben")} SW Lemma{REGEXP(Lemma.wordLemma,"zwei|drei|vier|fünf|sechs|sieben|acht")} Lemma{REGEXP(Lemma.wordLemma,"jahr|woche") -> MARK (Beginn, 1,4)};
-Lemma{REGEXP(Lemma.wordLemma,"ein|zwei|drei|vier|fünf|sechs|sieben")} Lemma{REGEXP(Lemma.wordLemma,"jahr|woche|monat") -> MARK (Beginn, 1,2)};
-
-
-
-
-//Assertion Detection: 
+//Negation Detection: 
     
 //for simplification, unify all "störungen" to one term = Stoerung_Value
 Wortfindung {->MARK(Stoerung_Value)};
@@ -240,8 +170,6 @@ W.ct=="von" Lemma{REGEXP(Lemma.wordLemma,"ihr|sein|der")} Fremd {->UNMARK(Fremd,
 //RelationDetection
 //Change variable depending on the experiencer, working on sentence basis
 
-
-//Negation Detection 
 //create two kinds of negation lists: 
     
 //negation list containing words that are only negated in presence of a negation term like not, no, without.. 
@@ -264,8 +192,6 @@ Lemma{REGEXP(Lemma.wordLemma, "nie|nicht")} Negation {->UNMARK(Negation, 2)};
 Lemma{REGEXP(Lemma.wordLemma,"unproblematisch|unauffällig|intakt|negieren|ungestört|altersentsprechend|verneinen|ausschließen|unbeeinträchtigt") -> MARK(Negation)};
 
 
-
-
 //if a disease follows "kein" it is removed immediately
 // if a disease follows "ohne einschränkung" at the end of a sentence it is removed immediately 
 
@@ -285,16 +211,13 @@ Sentence {AND(-CONTAINS(Trennung_Unit),CONTAINS(Negation))} -> {Stoerung_Value {
 Document {CONTAINS(Trennung_Unit)}-> {COMMA ANY[0,5]? Trennung_Unit ANY*? PERIOD {-> MARK(Nebensatz_Unit, 2, 4)}; };
 Document {CONTAINS(Trennung_Unit)}-> {Trennung_Unit COMMA ANY*? PERIOD {-> MARK(Nebensatz_Unit, 3, 4)}; };
 
-
 // unmark all occurencies of alzheimer in a sub-clause that is denied 
 Nebensatz_Unit {AND(CONTAINS(Negation), CONTAINS(Stoerung_Value))} -> {Stoerung_Value
        {-> UNMARK(Stoerung_Value)}; };
 
        
 //if sentence contains disease negation comma and then a stop word, unmark this disease  (HAUPTSATZ) 
-//Sentence {CONTAINS (Stoerung_Value)}-> {Stoerung_Value ANY*? Negation COMMA Trennung_Unit {-> UNMARK(Stoerung_Value, 1)}; };       
 Sentence {CONTAINS (Stoerung_Value)}-> {Stoerung_Value ANY*? Negation ANY*? Nebensatz_Unit {-> UNMARK(Stoerung_Value, 1)}; };
-
 
 
 //catching exceptions: 
