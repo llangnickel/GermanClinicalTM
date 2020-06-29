@@ -50,7 +50,7 @@ echo $NAME finished in $(($duration1 / 60)):$(($duration1 % 60))
 echo $NAME documents/s: $(($FILECOUNT / $duration1))
 SECONDS=0
 
-#Json2XCas
+#Text2XCas
 NAME="Text2XCAS"
 echo Running $NAME
 THREADS=1
@@ -137,41 +137,7 @@ echo $NAME documents/s: $(($FILECOUNT / $duration3))
 
 SECONDS=0
 
-# RegexFinder
-NAME="RegexFinder"
-echo Running $NAME
-THREADS=1
-REQUIRED_MEMORY_PER_THREAD=1966080
-REQUIRED_MEMORY=`expr $REQUIRED_MEMORY_PER_THREAD \* $THREADS`
-IN4=$OUT2
-OUT4=$OUTDIR/$NAME"_"$MODEL"_"$TIMESTAMP
-LOG_FILE=$LOGDIR"/"$NAME"_"$MODEL"_"$TIMESTAMP".log"
 
-FILECOUNT=0
-for item in $IN4/*
-do
-if [ -f "$item" ]
-    then
-         FILECOUNT=$[$FILECOUNT+1]
-fi
-done
-echo IN File count for $NAME: $FILECOUNT
-
-java -Xmx${REQUIRED_MEMORY}k $MICRO_JAVA_OPTS \
-     -jar ${BINARY_HOME}/${NAME}.jar \
-     -t $THREADS \
-     -log "ALL" \
-     -casPoolSize 1 \
-     -c ${CONFIG_HOME}/${NAME}.ini \
-      FILE \
-     -fs USERSUPPLIEDID \
-     -i $IN4 \
-     -o $OUT4 \
->> $LOG_FILE 2>&1
-duration5=$SECONDS
-echo $NAME finished in $(($duration5 / 60)):$(($duration5 % 60))
-echo $NAME documents/s: $(($FILECOUNT / $duration5))
-SECONDS=0
 
 # Tokenizer
 NAME="JPMTokenizer"
@@ -179,12 +145,12 @@ echo Running $NAME
 THREADS=1
 REQUIRED_MEMORY_PER_THREAD=1966080
 REQUIRED_MEMORY=`expr $REQUIRED_MEMORY_PER_THREAD \* $THREADS`
-IN5=$OUT4
-OUT5=$OUTDIR/$NAME"_"$TIMESTAMP
+IN3=$OUT2
+OUT3=$OUTDIR/$NAME"_"$TIMESTAMP
 LOG_FILE=$LOGDIR"/"$NAME"_"$TIMESTAMP".log"
 
 FILECOUNT=0
-for item in $IN5/*
+for item in $IN3/*
 do
 if [ -f "$item" ]
     then
@@ -199,8 +165,8 @@ java -Xmx${REQUIRED_MEMORY}k $MICRO_JAVA_OPTS \
      -t $THREADS \
      -casPoolSize 1 \
      -fs USERSUPPLIEDID \
-     -i $IN5 \
-     -o $OUT5 \
+     -i $IN3 \
+     -o $OUT3 \
      -v "DocumentView" \
 >> $LOG_FILE 2>&1
 duration6=$SECONDS
@@ -215,12 +181,12 @@ THREADS=1
 REQUIRED_MEMORY_PER_THREAD=1966080
 REQUIRED_MEMORY=`expr $REQUIRED_MEMORY_PER_THREAD \* $THREADS`
 MODEL="lemma-ger-3.6.model"
-IN6=$OUT5
-OUT6=$OUTDIR/$NAME"_"$MODEL"_"$TIMESTAMP
+IN4=$OUT3
+#OUT4=$OUTDIR/$NAME"_"$MODEL"_"$TIMESTAMP
 LOG_FILE=$LOGDIR"/"$NAME"_"$TIMESTAMP".log"
 
 FILECOUNT=0
-for item in $IN6/*
+for item in $IN4/*
 do
 if [ -f "$item" ]
     then
@@ -238,12 +204,18 @@ java -Xmx${REQUIRED_MEMORY}k $MICRO_JAVA_OPTS \
 	-m ${MODELS_HOME}/$MODEL \
          FILE \
 	-fs USERSUPPLIEDID \
-	-i $IN6 \
-	-o $OUT6 \
+	-i $IN4 \
+	-o $OUTDIR \
 >> $LOG_FILE 2>&1
 
+# delete prelimary results
+rm -r $IN1
+rm -r $IN2
+rm -r $IN3
+rm -r $IN4
+
 VGL=0
-for item in $OUT6/*
+for item in $OUTDIR/*
 do
 if [ -f "$item" ]
     then
@@ -254,7 +226,7 @@ if [ $VGL != $FILECOUNT ]
   then
 ERRFILE=$LOGDIR/$NAME"_"$TIMESTAMP"_ERROR.txt"
 echo Printing failed Documents to $ERRFILE
-diff -q $IN6 $OUT6 | grep Only | grep -oh '[a-zA-Z0-9_-]*.xmi' > $ERRFILE 
+diff -q $IN4 $OUTDIR | grep Only | grep -oh '[a-zA-Z0-9_-]*.xmi' > $ERRFILE 
 fi
 duration7=$SECONDS
 echo $NAME finished in $(($duration7 / 60)):$(($duration7 % 60))
