@@ -10,16 +10,14 @@ Due to data privacy, we can unfortunately not publish our data. However, we prov
 Clone the repository to your local folder: `git clone https://github.com/llangnickel/MedEx.git`   
 and then change the directory: `cd MedEx`
 
-### Medical Reports
 #### Preprocessing
 As a first step, all documents need to be pre-processed, using a sentence detector, a tokenizer and a lemmatizer. For both the sentence detector and the tokenizer, regular expressions were used, which can be found [here](/config). The lemmatizer is from the [*Mate tools*](https://www.ims.uni-stuttgart.de/en/research/resources/tools/matetools/). 
-
-To preprocess the documents, run: 
-
-
-#### Named Entity Recognition 
-We solved all NER tasks with the help of [UIMA Ruta](https://uima.apache.org/ruta.html). The source code and further information can be found [here](/RutaRules)
-
-
-
+  
+We provide some medical reports, that can be run via the *Paragraph* pipeline. 
+To preprocess the documents, run: `./preprocessing.sh example_data/paragraphs/ out_preprocessing`
+To annotate the different paragraphs, run: `./ruta.sh out_preprocessing out_paragraphs binary/RutaParagraphs.jar RutaRules/paragraphs/paragraphs.ruta`
+  
+To annotate *disturbances* such as memory, language, attention or planning disturbances from the *anamesis* section, you can run:  
+`./preprocessing.sh example_data/anamnesis/ out_anamnesis_pre` and  
+`./ruta.sh out_anamnesis_pre/ out_anamnesis binary/RutaDisturbances.jar RutaRules/disturbances/disturbances.ruta`
 
