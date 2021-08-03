@@ -43,7 +43,7 @@ Lemma{contains(Lemma.wordLemma,"konzen")->CREATE(Konzentration, "value"="True", 
 Lemma{contains(Lemma.wordLemma,"aufmerksamkeit")->CREATE(Konzentration, "value"="True", "key"="ACXATT")};
 
 
-//Sonstiges / 	miscellaneous
+//Sonstiges / 	miscellaneous // Orientierungsstörungen 
 
 Lemma{contains(Lemma.wordLemma,"orientierung") ->CREATE(Sonstige, "value"="True", "key"="ACXOTH")};
 Lemma{contains(Lemma.wordLemma,"räumlich")} Sonstige {->SHIFT(Sonstige, 1,2)};
