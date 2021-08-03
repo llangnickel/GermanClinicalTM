@@ -1,12 +1,10 @@
 DECLARE Sentence, W, CW, SW, COMMA, ANY, PERIOD, NUM;
 DECLARE Lemma;
 DECLARE Gedaechtnis, Konzentration, Wortfindung, PlanenOrdnen, Sonstige;
-//DECLARE Fremd, Eigen;
 DECLARE Value, Storung_Value, Trennung_Unit, Nebensatz_Unit;
 DECLARE Negation, Negation2;
 DECLARE NormalizedNamedEntity, Beginn, Beginn_A;
 DECLARE DHilfsannotation;
-//DECLARE mitBeg, ohneBeg;
 DECLARE Arztbriefdatum, MEDDATE;
 DECLARE ACMEMONSET_R, ACLNGONSET_R, ACATTONSET_R, ACOTHONSET_R, ACPLNONSET_R;
 DECLARE ACPLNONSET_A, ACMEMONSET_A, ACLNGONSET_A, ACATTONSET_A, ACOTHONSET_A;
@@ -26,7 +24,6 @@ Lemma{contains(Lemma.wordLemma,"häufig")} ANY?? Lemma{contains(Lemma.wordLemma,
 Lemma{contains(Lemma.wordLemma,"fragen")} Lemma{contains(Lemma.wordLemma,"häufig") ->CREATE(Gedaechtnis, "value"="True", "key"="ACXMEM")};
 Lemma{REGEXP(Lemma.wordLemma, "schlecht|nicht|problem|schwierigkeit")} W[0,6]? Lemma{REGEXP(Lemma.wordLemma,"erinnern|merken") ->CREATE(Gedaechtnis,1,3, "value"="True", "key"="ACXMEM")};
 Lemma{REGEXP(Lemma.wordLemma,"^mnestisch")} Lemma{REGEXP(Lemma.wordLemma,"defizit") ->CREATE(Gedaechtnis,1,2, "value"="True", "key"="ACXMEM")}; 
-//Lemma{REGEXP(Lemma.wordLemma,"erinnerung|nachfragen") ->CREATE(Gedaechtnis, "value"="True", "key"="ACXMEM")}; 
 Lemma{contains(Lemma.wordLemma,"merkfähigkeit") -> CREATE(Gedaechtnis, "value"="True", "key"="ACXMEM")};
 
 //remove false positives:
@@ -168,11 +165,8 @@ W.ct=="von" Lemma{REGEXP(Lemma.wordLemma,"ihr|sein|der")} Fremd {->UNMARK(Fremd,
 
 
 //RelationDetection
-//Change variable depending on the experiencer, working on sentence basis
-
 //create two kinds of negation lists: 
-    
-//negation list containing words that are only negated in presence of a negation term like not, no, without.. 
+    //negation list containing words that are only negated in presence of a negation term like not, no, without.. 
 
 Lemma{REGEXP(Lemma.wordLemma, "nicht|nie|kein|ohne")} ANY?? Lemma{REGEXP(Lemma.wordLemma, "berichten|vergessen|auffällig|bestehen|bestünden|beeinträchtigen|beeinträchtigung|
     |stören|möglich|nachweisbar|vorkommen|mindern|angeben|feststellen|kommen|festellbar|problematisch|befund|einschränken|ausprägen|hinweis|beweis|vorhanden|
